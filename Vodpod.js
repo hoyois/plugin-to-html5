@@ -1,8 +1,8 @@
-// VodPod killer (2011-08-14)
+// Vodpod killer (2011-08-14)
 // by Marc Hoyois
 
 var killer = new Object();
-addKiller("VodPod", killer);
+addKiller("Vodpod", killer);
 
 killer.canKill = function(data) {
 	if(data.plugin !== "Flash") return false;
