@@ -32,5 +32,3 @@ addKiller("Winfuture", {
 		});
 	}
 });
-
-// config=http://videos.pcgames.de/embed/pcgames/eb0634f77aff3f488cca/

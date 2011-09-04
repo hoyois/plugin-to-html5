@@ -41,5 +41,3 @@ addKiller("Gametrailers", {
 		});
 	}
 });
-
-// http://download.gametrailers.com/gt_vault/14354/gp_ffxiii-2_floordemo1_gc11gp_640x360_1200_m30.mp4
