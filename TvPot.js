@@ -26,7 +26,7 @@ killer.processVideoID = function(videoID, callback) {
   callback({
     "playlist": [{
       "sources": [{
-        "url": "http://rt.flvs.daum.net:8080/RTES/"+videoID+"/video.mp4",
+        "url": "http://rt.flvs.daum.net:8080/RTES/TenthVideo/"+videoID+"/video.mp4",
         "isNative": true
       }]
     }]
@@ -34,4 +34,5 @@ killer.processVideoID = function(videoID, callback) {
 };
 
 //http://rt.flvs.daum.net:8080/RTES/Redirect?vid=3o4PqE1iMys$&
+//http://rt.flvs.daum.net:8080/RTES/TenthVideo/3o4PqE1iMys$/video.mp4
 //http://stream.tvpot.daum.net/XCN2XD/4Sy8Zm/BZ2LeI/Bs4g$$.mp4
