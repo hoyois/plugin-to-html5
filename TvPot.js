@@ -4,7 +4,7 @@ addKiller("TvPot", killer);
 killer.canKill = function(data) {
 	if(data.plugin !== "Flash") return false;
 	if(data.src.indexOf("flvs.daum.net/") !== -1) {data.onsite = false; return true;}
-	if(data.src.search(/\/clip\/jloader2\.swf/) !== -1) {data.onsite = true; return true;}
+	if(data.src.search(/tvpot\.daum\.net\/clip\/jloader2\.swf/) !== -1) {data.onsite = true; return true;}
 	return false;
 };
 
