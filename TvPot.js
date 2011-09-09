@@ -13,17 +13,17 @@ killer.process = function(data, callback) {
     var flashvars = parseFlashVariables(data.params);
     if(flashvars.vid) this.processVideoID(flashvars.vid, callback);
     // fallback
-    var match = data.src.match(/clip\/jloader2\.swf\?vid\=([^&?]+)/);
+    var match = data.src.match(/clip\/jloader2\.swf\?([^&]+&)?vid\=([^&?]+)/);
     if(match) {
-      this.processVideoID(match[1], callback);
+      this.processVideoID(match[2], callback);
     }
     return;
   }
 
   // Embedded TvPot video
-  var match = data.src.match(/flvs\.daum\.net\/flvPlayer\.swf\?vid\=([^&?]+)/);
+  var match = data.src.match(/flvs\.daum\.net\/flvPlayer\.swf\?([^&]+&)?vid\=([^&?]+)/);
   if(match) {
-    this.processVideoID(match[1], callback);
+    this.processVideoID(match[2], callback);
   }
 };
 
