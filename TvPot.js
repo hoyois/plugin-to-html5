@@ -31,7 +31,7 @@ killer.processVideoID = function(videoID, callback) {
   callback({
     "playlist": [{
       "sources": [{
-        "url": "http://rt.flvs.daum.net:8080/RTES/TenthVideo/"+videoID+"/video.mp4",
+        "url": "http://rt.flvs.daum.net:8080/RTES/Redirect?vid="+videoID+"",
         "isNative": true
       }]
     }]
