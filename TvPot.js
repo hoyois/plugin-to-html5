@@ -11,13 +11,23 @@ killer.canKill = function(data) {
 killer.process = function(data, callback) {
 	if(data.onsite) {
 		var flashvars = parseFlashVariables(data.params);
-		if(flashvars.vid) callback("http://rt.flvs.daum.net:8080/RTES/Redirect?vid="+flashvars.vid);
+		if(flashvars.vid) this.processVideoID(flashvars.vid, callback);
 		return;
 	}
 
 	// Embedded TvPot video
 	var match = data.src.match(/flvs\.daum\.net\/flvPlayer\.swf\?vid\=([^&?]+)/);
 	if(match) {
-		callback("http://rt.flvs.daum.net:8080/RTES/Redirect?vid="+match[1]);
+		this.processVideoID(match[1], callback);
 	}
+};
+
+killer.processVideoID = function(videoID, callback) {
+  callback({
+  "playlist": [{
+    "sources": [{
+      "url": "http://rt.flvs.daum.net:8080/RTES/Redirect?vid="+videoID
+      }]
+    }]
+  });
 };
