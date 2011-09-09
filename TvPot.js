@@ -16,7 +16,7 @@ killer.process = function(data, callback) {
 	}
 
 	// Embedded TvPot video
-	var match = data.src.match(/flvs\.daum\.net\/flvPlayer\.swf\?vid\=([^&?]+\$)/);
+	var match = data.src.match(/flvs\.daum\.net\/flvPlayer\.swf\?vid\=([^&?]+)/);
 	if(match) {
 		this.processVideoID(match[1], callback);
 	}
