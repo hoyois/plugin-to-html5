@@ -11,17 +11,13 @@ killer.canKill = function(data) {
 killer.process = function(data, callback) {
 	if(data.onsite) {
 		var flashvars = parseFlashVariables(data.params);
-		if(flashvars.vid) this.processVideoID(flashvars.vid, callback);
+		if(flashvars.vid) callback("http://rt.flvs.daum.net:8080/RTES/Redirect?vid="+flashvars.vid);
 		return;
 	}
 
 	// Embedded TvPot video
 	var match = data.src.match(/flvs\.daum\.net\/flvPlayer\.swf\?vid\=([^&?]+)/);
 	if(match) {
-		this.processVideoID(match[1], callback);
+		callback("http://rt.flvs.daum.net:8080/RTES/Redirect?vid="+match[1]);
 	}
-};
-
-killer.processVideoID = function(videoID, callback) {
-  callback("http://rt.flvs.daum.net:8080/RTES/Redirect?vid="+videoID);
 };
