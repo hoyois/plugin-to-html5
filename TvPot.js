@@ -2,7 +2,6 @@ var killer = new Object();
 addKiller("TvPot", killer);
 
 killer.canKill = function(data) {
-  if(data.plugin !== "Flash") return false;
   if(data.src.indexOf("flvs.daum.net/") !== -1) {data.onsite = false; return true;}
   if(data.src.search(/clip\/jloader2\.swf/) !== -1) {data.onsite = true; return true;}
   return false;
@@ -10,7 +9,7 @@ killer.canKill = function(data) {
 
 killer.process = function(data, callback) {
   if(data.onsite) {
-    var flashvars = parseFlashVariables(data.params);
+    var flashvars = parseFlashVariables(data.params.flashvars);
     if(flashvars.vid) this.processVideoID(flashvars.vid, callback);
     // fallback
     var match = data.src.match(/clip\/jloader2\.swf\?([^&]+&)?vid\=([^&?]+)/);
