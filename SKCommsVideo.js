@@ -30,10 +30,10 @@ addKiller("SKCommsVideo", {
       }
 
       // embedded Egloos Video
-
       var match = data.src.match(/v\.egloos\.com\/v\.sk\/egloos\/([a-z][0-9]+)%7C([0-9]+)\/([0-9]+)/);
       if (match) {
-        this.processEgloosVideoID(match[3], match[1], match[2], callback);
+        this.processNateVideoID(match[3], callback);
+        //this.processEgloosVideoID(match[3], match[1], match[2], callback);
       }
       return;
     }
@@ -58,7 +58,7 @@ addKiller("SKCommsVideo", {
     callback({
       "playlist": [{
         "sources": [{
-          "url": "http://www.egloos.com/exec/mobile/play_movile_video.php?movieid="+videoid+"&blogid="+blogid+"&serial="+serial+"",
+          "url": "http://ebc.egloos.com/exec/mobile/play_movile_video.php?movieid="+videoid+"&blogid="+blogid+"&serial="+serial+"",
           "isNative": true
         }]
       }]
