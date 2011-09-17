@@ -2,7 +2,7 @@ addKiller("SKCommsVideo", {
   "canKill": function(data) {
     if (/v.nate.com/.test(data.src)) { data.site="nate"; return true;}
     if (/v.egloos.com/.test(data.src)) { data.site="egloos"; return true;}
-    if (/video.cyworld.com/.test(data.src)) { data.site="cyworld"; return true; }
+    if (/dbi.video.cyworld.com/.test(data.src)) { data.site="cyworld"; return true; }
     return false;
   },
 
