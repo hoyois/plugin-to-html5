@@ -32,8 +32,7 @@ addKiller("SKCommsVideo", {
       // embedded Egloos Video
       var match = data.src.match(/v\.egloos\.com\/v\.sk\/egloos\/([a-z][0-9]+)%7C([0-9]+)\/([0-9]+)/);
       if (match) {
-        this.processNateVideoID(match[3], callback);
-        //this.processEgloosVideoID(match[3], match[1], match[2], callback);
+        this.processEgloosVideoID(match[3], match[1], match[2], callback);
       }
       return;
     }
