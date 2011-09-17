@@ -2,14 +2,14 @@ addKiller("SKCommsVideo", {
   "canKill": function(data) {
     if (/v.nate.com/.test(data.src)) { data.site="nate"; return true;}
     if (/v.egloos.com/.test(data.src)) { data.site="egloos"; return true;}
-    if (/dbi.video.cyworld.com/.test(data.src)) { data.site="cyworld"; return true; }
+    if (/video.cyworld.com/.test(data.src)) { data.site="cyworld"; return true; }
     return false;
   },
 
   "process": function(data, callback) {
      var flashvars = parseFlashVariables(data.params.flashvars);
     // nate (pann, video, ...)
-    if(data.site=="nate" || data.site=="cyworld") {
+    if(data.site=="nate") {
       if(flashvars.mov_id) {
         this.processNateVideoID(flashvars.mov_id, callback);
       }
@@ -21,6 +21,14 @@ addKiller("SKCommsVideo", {
       }
       return;
     }
+    // Cyworld (merged by Nate)
+    if(data.site=="cyworld") {
+      if(flashvars.mov_id) {
+        this.processNateRealTimeVideoID(flashvars.mov_id, callback);
+      }
+      return;
+    }
+
     // egloos (blog)
     if(data.site=="egloos") {
       if (flashvars.mov_id && flashvars.vs_keys) {
@@ -47,6 +55,17 @@ addKiller("SKCommsVideo", {
       "playlist": [{
         "sources": [{
           "url": "http://m.pann.nate.com/video/videoPlayUrl?video_id="+videoid+"",
+          "isNative": true
+        }]
+      }]
+    });
+  },
+
+  "processNateRealTimeVideoID": function(videoid, callback) {
+    callback({
+      "playlist": [{
+        "sources": [{
+          "url": "http://m.pann.nate.com/video/videoPlayUrlRealTime?video_id="+videoid+"",
           "isNative": true
         }]
       }]
