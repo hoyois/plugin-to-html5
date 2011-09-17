@@ -1,15 +1,12 @@
-// Vodpod killer (2011-08-14)
-// by Marc Hoyois
+// Vodpod killer (2011-09-16)
 
-var killer = new Object();
-addKiller("Vodpod", killer);
+addKiller("Vodpod", {
 
-killer.canKill = function(data) {
-	if(data.plugin !== "Flash") return false;
+"canKill": function(data) {
 	return data.src.indexOf("widgets.vodpod.com/w/video_embed/") !== -1;
-};
+},
 
-killer.process = function(data, callback) {
+"process": function(data, callback) {
 	var xhr = new XMLHttpRequest();
 	xhr.open('GET', "http://metauri.com/show.xml?uri=" + encodeURIComponent(data.src), true);
 	
@@ -31,6 +28,15 @@ killer.process = function(data, callback) {
 				return;
 			}
 		}
+		if(hasKiller("Blip")) {
+			k = getKiller("Blip");
+			if(k.canKill(data)) {
+				k.process(data, callback);
+				return;
+			}
+		}
 	};
 	xhr.send(null);
-};
+}
+
+});

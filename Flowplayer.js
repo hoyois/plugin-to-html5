@@ -1,24 +1,21 @@
-// Flowplayer killer (2011-08-14)
-// by Marc Hoyois
+// Flowplayer killer (2011-09-16)
 
-var killer = new Object();
-addKiller("Flowplayer", killer);
+addKiller("Flowplayer", {
 
-killer.canKill = function(data) {
-	if(data.plugin !== "Flash") return false;
-	if(!/(?:^|&)config=/.test(data.params)) return false;
+"canKill": function(data) {
+	if(!/(?:^|&)config=/.test(data.params.flashvars)) return false;
 	if(/flowplayer[^\/]*\.swf/i.test(data.src)) {return true;}
-	if(/bimvid_player-[^\/.]*\.swf$/.test(data.src)) {data.bim = true; return true;}
-};
+	if(/bimvid_player-[^\/.]*\.swf(?:\?|$)/.test(data.src)) {data.bim = true; return true;}
+},
 
-killer.process = function(data, callback) {
-	var config = JSON.parse(decodeURIComponent(parseFlashVariables(data.params).config));
+"process": function(data, callback) {
+	var config = JSON.parse(parseFlashVariables(data.params.flashvars).config);
 	var baseURL;
 	if(config.clip) baseURL = config.clip.baseUrl;
 	
-	var mediaURL, ext;
-	var playlist = new Array();
-	var isAudio = true;
+	var mediaURL, info;
+	var playlist = [];
+	var audioOnly = true;
 	
 	var parseTitle = function(title) {return title};
 	if(data.bim) parseTitle = function(title) {return unescapeHTML(title.replace(/\+/g, " "));}
@@ -28,35 +25,47 @@ killer.process = function(data, callback) {
 		for(var i = 0; i < config.playlist.length; i++) {
 			if(config.playlist[i].provider === "rtmp") continue;
 			mediaURL = config.playlist[i].url;
-			ext = extInfo(mediaURL);
-			if(ext) {
+			info = urlInfo(mediaURL);
+			if(info) {
 				if(config.playlist[i].baseUrl) baseURL = config.playlist[i].baseUrl;
 				if(baseURL) {
 					if(!/\/$/.test(baseURL)) baseURL += "/";
 					mediaURL = baseURL + mediaURL;
 				}
-				playlist.push({"title": parseTitle(config.playlist[i].title), "poster": config.playlist[i].overlay, "sources": [{"url": mediaURL, "mediaType": ext.mediaType, "isNative": ext.isNative}]}); // resolution:
-				if(ext.mediaType === "video") isAudio = false;
+				info.url = mediaURL;
+				// info.height = ?
+				playlist.push({
+					"title": parseTitle(config.playlist[i].title),
+					"poster": config.playlist[i].overlay,
+					"sources": [info]
+				});
+				if(!info.isAudio) audioOnly = false;
 			}
 		}
 	} else if(config.clip) {
 		if(config.clip.provider === "rtmp") return;
 		mediaURL = config.clip.url;
 		if(!mediaURL) return;
-		ext = extInfo(mediaURL);
-		if(ext) {
+		info = urlInfo(mediaURL);
+		if(info) {
 			if(baseURL) {
 				if(!/\/$/.test(baseURL)) baseURL += "/";
 				mediaURL = baseURL + mediaURL;
 			}
-			playlist.push({"title": parseTitle(config.playlist[i].title), "poster": config.clip.overlay, "sources": [{"url": mediaURL, "mediaType": ext.mediaType, "isNative": ext.isNative}]});
-			if(ext.mediaType === "video") isAudio = false;
+			info.url = mediaURL;
+			playlist.push({
+				"title": parseTitle(config.playlist[i].title),
+				"poster": config.clip.overlay,
+				"sources": [info]
+			});
+			if(!info.isAudio) audioOnly = false;
 		}
 	} else return;
 	
-	var mediaData = {
+	callback({
 		"playlist": playlist,
-		"isAudio": isAudio
-	};
-	callback(mediaData);
-};
+		"audioOnly": audioOnly
+	});
+}
+
+});

@@ -1,27 +1,32 @@
-var killer = new Object();
-addKiller("Silverlight", killer);
+addKiller("Silverlight", {
 
-killer.canKill = function(data) {
-	if(!data.plugin === "Silverlight") return false;
-	var match = data.params.match(/(?:^|,)(m|fileurl|mediaurl)=/);
+"canKill": function(data) {
+	if(data.type !== "application/x-silverlight-2") return false;
+	var match = /(?:^|,)(m|fileurl|mediaurl)=/.exec(data.params.initparams);
 	if(match) {data.file = match[1]; return true;}
 	return false;
-};
+},
 
-killer.process = function(data, callback) {
-	var SLvars = parseSLVariables(data.params);
+"process": function(data, callback) {
+	var SLvars = parseSLVariables(data.params.initparams);
 	var mediaURL = decodeURIComponent(SLvars[data.file]);
-	var ext = extInfo(mediaURL);
+	var info = urlInfo(mediaURL);
 	
-	var sources = new Array();
-	if(ext) sources.push({"url": mediaURL, "isNative": ext.isNative, "mediaType": ext.mediaType});
+	var audioOnly = false;
+	var sources = [];
+	if(info) {
+		info.url = mediaURL;
+		sources.push(info);
+		audioOnly = info.isAudio;
+	}
 	
 	var posterURL;
 	if(SLvars.thumbnail) posterURL = decodeURIComponent(SLvars.thumbnail);
 	
-	var mediaData = {
+	callback({
 		"playlist": [{"poster": posterURL, "sources": sources}],
-		"isAudio": ext.mediaType === "audio"
-	}
-	callback(mediaData);
-};
+		"audioOnly": audioOnly
+	});
+}
+
+});

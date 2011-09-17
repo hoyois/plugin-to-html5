@@ -1,23 +1,20 @@
-// BIM killer (2011-08-14)
-// by Marc Hoyois
+// BIM killer (2011-09-16)
 
-var killer = new Object();
-addKiller("BIM", killer);
+addKiller("BIM", {
 
-killer.canKill = function(data) {
-	if(data.plugin !== "Flash") return false;
-	return (/bimVideoPlayer[^\/.]*\.swf$/.test(data.src) && /(?:^|&)mediaXML=/.test(data.params));
-};
+"canKill": function(data) {
+	return (/bimVideoPlayer[^\/.]*\.swf$/.test(data.src) && /(?:^|&)mediaXML=/.test(data.params.flashvars));
+},
 
-killer.process = function(data, callback) {
-	var url = decodeURIComponent(parseFlashVariables(data.params).mediaXML);
+"process": function(data, callback) {
+	var url = decodeURIComponent(parseFlashVariables(data.params.flashvars).mediaXML);
 	var title, posterURL, videoURL;
-	
+
 	var xhr = new XMLHttpRequest();
 	xhr.open('GET', url, true);
 	xhr.onload = function() {
 		var xml = xhr.responseXML;
-		
+
 		if(xml.getElementsByTagName("h264").length > 0) {
 			videoURL = xml.getElementsByTagName("h264")[0].textContent;
 		} else return;
@@ -28,10 +25,15 @@ killer.process = function(data, callback) {
 			title = xml.getElementsByTagName("title")[0].textContent;
 		}
 		
-		var videoData = {
-			"playlist": [{"poster": posterURL, "title": title, "sources": [{"url": videoURL, "isNative": true}]}]
-		};
-		callback(videoData);
+		callback({
+			"playlist": [{
+				"poster": posterURL,
+				"title": title,
+				"sources": [{"url": videoURL, "format": "MP4", "isNative": true}]
+			}]
+		});
 	};
 	xhr.send(null);
-};
+}
+
+});
