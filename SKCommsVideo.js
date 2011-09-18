@@ -11,13 +11,13 @@ addKiller("SKCommsVideo", {
     // nate (pann, video, ...)
     if(data.site=="nate") {
       if(flashvars.mov_id) {
-        this.processNateVideoID(flashvars.mov_id, callback);
+        this.processNateRealTimeVideoID(flashvars.mov_id, callback);
       }
 
       // embedded Nate video
       var match = data.src.replace(/\|/g, "%7C").match(/v\.nate\.com\/v\.sk\/movie\/0%7C(\d+)\/(\d+)/);
       if (match) {
-        this.processNateVideoID(match[2], callback);
+        this.processNateRealTimeVideoID(match[2], callback);
       }
       return;
     }
