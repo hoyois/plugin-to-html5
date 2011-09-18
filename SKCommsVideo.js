@@ -15,9 +15,9 @@ addKiller("SKCommsVideo", {
       }
 
       // embedded Nate video
-      var match = data.src.match(/v\.nate\.com\/v\.sk\/movie\/0(\||%7C)([0-9]+)\/([0-9]+)/);
+      var match = data.src.replace(/|/g, "%7C").match(/v\.nate\.com\/v\.sk\/movie\/0%7C(\d+)\/(\d+)/);
       if (match) {
-        this.processNateVideoID(match[3], callback);
+        this.processNateVideoID(match[2], callback);
       }
       return;
     }
@@ -38,9 +38,9 @@ addKiller("SKCommsVideo", {
       }
 
       // embedded Egloos Video
-      var match = data.src.match(/v\.egloos\.com\/v\.sk\/egloos\/([a-z][0-9]+)(\||%7C)([0-9]+)\/([0-9]+)/);
+      var match = data.src.replace(/\|/g, "%7C").match(/v\.egloos\.com\/v\.sk\/egloos\/([a-z]\d+)%7C(\d+)\/(\d+)/);
       if (match) {
-        this.processEgloosVideoID(match[4], match[1], match[3], callback);
+        this.processEgloosVideoID(match[3], match[1], match[2], callback);
       }
       return;
     }
