@@ -15,7 +15,7 @@ addKiller("SKCommsVideo", {
       }
 
       // embedded Nate video
-      var match = data.src.replace(/|/g, "%7C").match(/v\.nate\.com\/v\.sk\/movie\/0%7C(\d+)\/(\d+)/);
+      var match = data.src.replace(/\|/g, "%7C").match(/v\.nate\.com\/v\.sk\/movie\/0%7C(\d+)\/(\d+)/);
       if (match) {
         this.processNateVideoID(match[2], callback);
       }
