@@ -11,20 +11,20 @@ addKiller("SKCommsVideo", {
     // nate (pann, video, ...)
     if(data.site=="nate") {
       if(flashvars.mov_id) {
-        this.processNateRealTimeVideoID(flashvars.mov_id, callback);
+        this.processNateVideoID(flashvars.mov_id, callback);
       }
 
       // embedded Nate video
       var match = data.src.replace(/\|/g, "%7C").match(/v\.nate\.com\/v\.sk\/movie\/0%7C(\d+)\/(\d+)/);
       if (match) {
-        this.processNateRealTimeVideoID(match[2], callback);
+        this.processNateVideoID(match[2], callback);
       }
       return;
     }
     // Cyworld (merged by Nate)
     if(data.site=="cyworld") {
       if(flashvars.mov_id) {
-        this.processNateRealTimeVideoID(flashvars.mov_id, callback);
+        this.processNateVideoID(flashvars.mov_id, callback);
       }
       return;
     }
@@ -51,17 +51,6 @@ addKiller("SKCommsVideo", {
   },
 
   "processNateVideoID": function(videoid, callback) {
-    callback({
-      "playlist": [{
-        "sources": [{
-          "url": "http://m.pann.nate.com/video/videoPlayUrl?video_id="+videoid+"",
-          "isNative": true
-        }]
-      }]
-    });
-  },
-
-  "processNateRealTimeVideoID": function(videoid, callback) {
     callback({
       "playlist": [{
         "sources": [{
