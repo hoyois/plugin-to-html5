@@ -44,10 +44,6 @@ addKiller("SKCommsVideo", {
       }
       return;
     }
-    // cyworld (mini-homepage, blog, ...)
-    if(data.site=="cyworld") {
-      return;
-    }
   },
 
   "processNateVideoID": function(videoid, callback) {
