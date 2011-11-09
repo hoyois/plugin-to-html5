@@ -3,7 +3,7 @@
 addKiller("ВКонтакте", {
 
 "canKill": function(data) {
-	return data.src.indexOf("vkontakte.ru/swf/") !== -1;
+	return data.src.indexOf("vkontakte.ru/swf/") !== -1 || data.src.indexOf("vk.com/swf/") !== -1;
 },
 
 "process": function(data, callback) {
