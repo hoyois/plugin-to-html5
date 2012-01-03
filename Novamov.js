@@ -4,7 +4,7 @@ addKiller("novamov", {
 
 "canKill": function(data) {
 	if(!canPlayFLV) return false;
-	if(/http:\/\/embed\.novamov\.com\/player\/novaplayerv3\.swf/.test(data.src)) {return true;};
+	if(/novamov\.com/.test(data.src)) {return true;};
 	console.log("novamov: failed.")
 	return false;
 },
