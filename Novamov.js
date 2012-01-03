@@ -5,6 +5,7 @@ addKiller("novamov", {
 "canKill": function(data) {
 	if(!canPlayFLV) return false;
 	if(/http:\/\/embed\.novamov\.com\/player\/novaplayerv3\.swf/.test(data.src)) {return true;};
+	console.log("novamov: failed.")
 	return false;
 },
 
@@ -16,7 +17,7 @@ addKiller("novamov", {
 	xhr.open('GET', url, true);
 	xhr.onload = function() {
 		var sources = [];
-		var match = xhr.responseText.match("/url=([^&]+)&title=([^&]*)&/");
+		var match = /url=([^&]+)&title=([^&]*)&/.exec(xhr.responseText);
 		sources.push({"url": match[1], "format": "FLV", "isNative": false});
 		callback({
 			"playlist": [{"title": match[2], "sources": sources}]
