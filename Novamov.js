@@ -20,7 +20,7 @@ addKiller("novamov", {
 		var match = /url=([^&]+)&title=([^&]*)&/.exec(xhr.responseText);
 		sources.push({"url": match[1], "format": "FLV", "isNative": false});
 		callback({
-			"playlist": [{"title": match[2], "sources": sources}]
+			"playlist": [{"title": decodeURIComponent(match[2]), "sources": sources}]
 		});
 	};
 	xhr.send(null);
