@@ -4,14 +4,13 @@ addKiller("novamov", {
 
 "canKill": function(data) {
 	if(!canPlayFLV) return false;
-	if(/novamov\.com/.test(data.src)) {return true;};
-	console.log("novamov: failed.")
+	if(/novaplayerv3\.swf/.test(data.src)) {return true;};
 	return false;
 },
 
 "process": function(data, callback) {
 	var flashvars = parseFlashVariables(data.params.flashvars);
-	var url = "http://www.novamov.com/api/player.api.php?key=" + flashvars.filekey + "&file=" + flashvars.file;
+	var url = "http://www.novamov.com/api/player.api.php?key=" + flashvars.filekey + "&pass=undefined" + "&codes=" + flashvars.cid + "&file=" + flashvars.file;
 	
 	var xhr = new XMLHttpRequest();
 	xhr.open('GET', url, true);
