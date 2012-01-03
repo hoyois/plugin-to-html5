@@ -4,7 +4,7 @@ addKiller("novamov", {
 
 "canKill": function(data) {
 	if(!canPlayFLV) return false;
-	if(/\/player\/novaplayerv[3-9]?\.swf/.test(data.src)) {return true;};
+	if(/http:\/\/embed\.novamov\.com\/player\/novaplayerv3\.swf/.test(data.src)) {return true;};
 	return false;
 },
 
@@ -14,7 +14,6 @@ addKiller("novamov", {
 	
 	var xhr = new XMLHttpRequest();
 	xhr.open('GET', url, true);
-	var _this = this;
 	xhr.onload = function() {
 		var sources = [];
 		var match = xhr.responseText.match("/url=([^&]+)&title=([^&]*)&/");
