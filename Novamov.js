@@ -21,7 +21,6 @@ addKiller("novamov", {
 },
 
 "parseResponse": function(response, callback) {
-	var sources = [];
 	var match = /url=([^&]+)&title=([^&]+)&/.exec(response);
 	if (match) {
 		callback({
