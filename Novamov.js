@@ -15,19 +15,18 @@ addKiller("novamov", {
 	var _this = this;
 	xhr.open('GET', url, true);
 	xhr.onload = function(event) {
-		_this.parseResponse(event.target.responseText, callback);
+		_this.parseResponse(parseFlashVariables(event.target.responseText), callback);
 	};
 	xhr.send(null);
 },
 
 "parseResponse": function(response, callback) {
-	var match = /url=([^&]+)&title=([^&]+)&/.exec(response);
-	if (match) {
+	if (response.url && response.title) {
 		callback({
 			"playlist": [{
-				"title": decodeURIComponent(match[2]).replace("&asdasds",""),
+				"title": response.title.replace("/&(.+)/",""),
 				"sources": [{
-					"url": match[1],
+					"url": response.url,
 					"format": "FLV",
 					"isNative": false
 					}]
