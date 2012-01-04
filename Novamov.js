@@ -10,19 +10,32 @@ addKiller("novamov", {
 
 "process": function(data, callback) {
 	var flashvars = parseFlashVariables(data.params.flashvars);
-	var url = "http://www.novamov.com/api/player.api.php?key=" + flashvars.filekey + "&pass=undefined" + "&codes=" + flashvars.cid + "&file=" + flashvars.file;
-	
-	var xhr = new XMLHttpRequest();
-	xhr.open('GET', url, true);
-	xhr.onload = function() {
-		var sources = [];
-		var match = /url=([^&]+)&title=([^&]*)&/.exec(xhr.responseText);
-		sources.push({"url": match[1], "format": "FLV", "isNative": false});
-		callback({
-			"playlist": [{"title": decodeURIComponent(match[2]), "sources": sources}]
-		});
-	};
-	xhr.send(null);
+	var url;
+	if (flashvars.filekey && flashvars.file) {
+		url = "http://www.novamov.com/api/player.api.php?key=" + flashvars.filekey + "&pass=undefined&codes=" + flashvars.cid + "&file=" + flashvars.file;
+	}
+
+	if (url) {
+		var xhr = new XMLHttpRequest();
+		xhr.open('GET', url, true);
+		xhr.onload = function() {
+			var sources = [];
+			var match = /url=([^&]+)&title=([^&]+)&/.exec(xhr.responseText);
+			if (match) {
+				callback({
+					"playlist": [{
+						"title": decodeURIComponent(match[2]),
+						"sources": [{
+							"url": match[1],
+							"format": "FLV",
+							"isNative": false
+							}]
+						}]
+				});
+			}
+		};
+		xhr.send(null);
+	}
 },
 
 });
