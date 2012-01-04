@@ -34,7 +34,7 @@ killer.processVideoID = function(videoID, callback) {
 		var result = event.target.responseXML.getElementsByTagName("CLIP")[0];
 		var title = result.getElementsByTagName("TITLE")[0].textContent;
 		var siteInfo = result.getElementsByTagName("ORG_URL")[0].textContent;
-		var posterUrl = result.getElementsByTagName("SOURCE_URL")[0].textContent;
+		var posterUrl = result.getElementsByTagName("THUMB_URL")[0].textContent;
 
 	    callback({
 	      "playlist": [{
