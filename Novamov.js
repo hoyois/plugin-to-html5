@@ -17,12 +17,13 @@ addKiller("novamov", {
 
 	if (url) {
 		var xhr = new XMLHttpRequest();
+		_callback = callback;
 		xhr.open('GET', url, true);
 		xhr.onload = function() {
 			var sources = [];
 			var match = /url=([^&]+)&title=([^&]+)&/.exec(xhr.responseText);
 			if (match) {
-				callback({
+				_callback({
 					"playlist": [{
 						"title": decodeURIComponent(match[2]),
 						"sources": [{
