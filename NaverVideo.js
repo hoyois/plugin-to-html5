@@ -47,7 +47,7 @@ addKiller("NaverVideo", {
 					"isNative": (type == "MP4") ? true : false
 				}]
 			}]
-		});				
+		});
 	};
 	xhr.send(null);
 }
