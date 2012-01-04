@@ -25,7 +25,7 @@ addKiller("novamov", {
 	if (match) {
 		callback({
 			"playlist": [{
-				"title": decodeURIComponent(match[2]),
+				"title": decodeURIComponent(match[2]).replace("&asdasds",""),
 				"sources": [{
 					"url": match[1],
 					"format": "FLV",
