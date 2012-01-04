@@ -27,12 +27,27 @@ killer.process = function(data, callback) {
 };
 
 killer.processVideoID = function(videoID, callback) {
-  callback({
-    "playlist": [{
-      "sources": [{
-        "url": "http://rt.flvs.daum.net:8080/RTES/Redirect?vid="+videoID+"",
-        "isNative": true
-      }]
-    }]
-  });
+	var clipInfoXml = "http://tvpot.daum.net/clip/ClipInfoXml.do?vid=" + videoID + "&kind=player";
+	var xhr = new XMLHttpRequest();
+	xhr.open('GET', clipInfoXml, true);
+	xhr.onload = function(event) {
+		var result = event.target.responseXML.getElementsByTagName("CLIP")[0];
+		var title = result.getElementsByTagName("TITLE")[0].textContent;
+		var siteInfo = result.getElementsByTagName("ORG_URL")[0].textContent;
+		var posterUrl = result.getElementsByTagName("SOURCE_URL")[0].textContent;
+
+	    callback({
+	      "playlist": [{
+			"title": title,
+			"poster": posterUrl,
+			"siteinfo": siteInfo,
+	        "sources": [{
+	          "url": "http://rt.flvs.daum.net:8080/RTES/Redirect?vid="+videoID+"",
+			  "format": "MP4",
+	          "isNative": true
+	        }]
+	      }]
+	    });
+	};
+	xhr.send(null);
 };
