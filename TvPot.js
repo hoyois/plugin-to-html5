@@ -33,14 +33,17 @@ killer.processVideoID = function(videoID, callback) {
 	xhr.onload = function(event) {
 		var result = event.target.responseXML.getElementsByTagName("CLIP")[0];
 		var title = result.getElementsByTagName("TITLE")[0].textContent;
-		var siteInfo = result.getElementsByTagName("ORG_URL")[0].textContent;
+		var link = result.getElementsByTagName("ORG_URL")[0].textContent;
 		var posterUrl = result.getElementsByTagName("THUMB_URL")[0].textContent;
 
 	    callback({
 	      "playlist": [{
 			"title": title,
 			"poster": posterUrl,
-			"siteinfo": siteInfo,
+			"siteinfo": [{
+				"name": "TvPot",
+				"url": link
+				}],
 	        "sources": [{
 	          "url": "http://rt.flvs.daum.net:8080/RTES/Redirect?vid="+videoID+"",
 			  "format": "MP4",

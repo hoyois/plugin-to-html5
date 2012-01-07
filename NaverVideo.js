@@ -38,7 +38,10 @@ addKiller("NaverVideo", {
 
 		callback({
 			"playlist": [{
-				"siteinfo": link,
+				"siteinfo": [{
+						"name": "Naver",
+						"url": link
+					}],
 				"title": title,
 				"poster": posterurl,
 				"sources": [{
