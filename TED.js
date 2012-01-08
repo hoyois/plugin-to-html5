@@ -58,8 +58,6 @@ addKiller("TED", {
 		xhr2.send(null);
 	};
 	xhr.send(null);
-	
-	
 }
 
 });
