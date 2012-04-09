@@ -9,7 +9,7 @@ addKiller("Flowplayer", {
 },
 
 "process": function(data, callback) {
-	var config = JSON.parse(parseFlashVariables(data.params.flashvars).config);
+	var config = JSON.parse(decodeURIComponent(parseFlashVariables(data.params.flashvars).config));
 	var baseURL;
 	if(config.clip) baseURL = config.clip.baseUrl;
 	
