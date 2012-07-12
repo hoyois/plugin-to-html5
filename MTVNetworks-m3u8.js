@@ -52,50 +52,40 @@ addKiller("MTVNetworks", {
 		console.log(xml);
 		var items = xml.getElementsByTagName("item");
 		
-		var list = [];
+		var mgidList = [];
 		var playlist = [];
 		
-		var content, poster, title, obj;
+		var content, poster, title, mgidItem;
 		for(var i = 0; i < items.length; i++) {
-			content = items[i].getElementsByTagNameNS("http://search.yahoo.com/mrss/", "content")[0];
-			if(!content) continue;
-			obj = {"content": content.getAttribute("url")};
+			mgid = items[i].getElementsByTagName("guid")[0];
+			if(!mgid) continue;
+			mgidItem = {"mgid": mgid.textContent};
 			
 			poster = items[i].getElementsByTagNameNS("http://search.yahoo.com/mrss/", "thumbnail")[0];
-			if(poster) obj.poster = poster.getAttribute("url");
+			if(poster) mgidItem.poster = poster.getAttribute("url");
 			
 			title = items[i].getElementsByTagName("title")[0];
-			if(title) obj.title = title.textContent;
+			if(title) mgidItem.title = title.textContent;
 			
-			list.push(obj);
+			mgidList.push(mgidItem);
 		}
 		
 		var next = function() {
-			if(list.length === 0) callback({"playlist": playlist});
-			else addToPlaylist(list.shift());
+			if(mgidList.length === 0) callback({"playlist": playlist});
+			else addToPlaylist(mgidList.shift());
 		};
 		
-		var addToPlaylist = function(obj) {
+		var addToPlaylist = function(mgidItem) {
 			var xhr = new XMLHttpRequest();
-			xhr.open("GET", obj.content, true);
-			delete obj.content;
+			xhr.open("GET", "http://media.mtvnservices.com/player/html5/mediagen/?uri=" + mgidItem.mgid + "&device=iPad", true);
+			delete mgidItem.mgid;
 			xhr.addEventListener("load", function() {
-				console.log(xhr.responseText)
-				var renditions = xhr.responseXML.getElementsByTagName("rendition");
-				var sources = [];
-				for(var i = renditions.length -1 ; i >= 0; i--) {					
-					var source = typeInfo(renditions[i].getAttribute("type"));
-					if(source === null) continue;
-					source.format = renditions[i].getAttribute("bitrate") + "k " + source.format;
-					source.height = parseInt(renditions[i].getAttribute("height"));
-					source.url = renditions[i].getElementsByTagName("src")[0].textContent;	
-					source.url = "http://mtvnmobile.vo.llnwd.net/kip0/_pxn=0+_pxK=18639+_pxE=mp4/44620/mtvnorigin" + source.url.substring(source.url.indexOf("/gsp."));
-					sources.push(source);
-				}
-				if(sources.length !== 0) {
-					obj.sources = sources;
-					playlist.push(obj);
-				}
+				var xml = new DOMParser().parseFromString(xhr.responseText.replace(/^\s+/,""), "text/xml");
+				var videoURL = xml.getElementsByTagName("src")[0];
+				if(videoURL) {
+					mgidItem.sources = [{"url": videoURL.textContent, "isNative": true}];
+					playlist.push(mgidItem);
+				} else console.log("No iPad!")
 				next();
 			}, false);
 			xhr.send(null);

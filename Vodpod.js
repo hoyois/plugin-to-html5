@@ -21,6 +21,13 @@ addKiller("Vodpod", {
 				return;
 			}
 		}
+		if(hasKiller("Vimeo")) {
+			k = getKiller("Vimeo");
+			if(k.canKill(data)) {
+				k.process(data, callback);
+				return;
+			}
+		}
 		if(hasKiller("Blip")) {
 			k = getKiller("Blip");
 			if(k.canKill(data)) {
