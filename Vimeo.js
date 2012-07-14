@@ -14,7 +14,7 @@ addKiller("Vimeo", {
 	if(!videoID) return;
 	
 	var xhr = new XMLHttpRequest();
-	xhr.open('GET', "http://vimeo.com/" + videoID, true);
+	xhr.open("GET", "http://vimeo.com/" + videoID, true);
 	xhr.onload = function() {
 		var s = xhr.responseText.substring(xhr.responseText.lastIndexOf("<script>"));
 		s = s.substring(s.indexOf("config:{") + 7);

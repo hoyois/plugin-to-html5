@@ -23,8 +23,8 @@ addKiller("Blip", {
 
 "processXML": function(url, isEmbed, callback) {
 	var xhr = new XMLHttpRequest();
-	xhr.open('GET', url, true);
-	xhr.onload = function() {
+	xhr.open("GET", url, true);
+	xhr.addEventListener("load", function() {
 		var xml = xhr.responseXML;
 		var media = xml.getElementsByTagNameNS("http://search.yahoo.com/mrss/", "content");
 		var sources = [];
@@ -58,17 +58,17 @@ addKiller("Blip", {
 			}],
 			"audioOnly": audioOnly
 		});
-	};
+	}, false);
 	xhr.send(null);
 },
 
 "processOldVideoID": function(videoID, callback) {
 	var xhr = new XMLHttpRequest();
-	xhr.open('GET', "http://blip.tv/players/episode/" + videoID + "?skin=api", true);
+	xhr.open("GET", "http://blip.tv/players/episode/" + videoID + "?skin=api", true);
 	var _this = this;
-	xhr.onload = function() {
+	xhr.addEventListener("load", function() {
 		_this.processXML("http://blip.tv/rss/flash/" + xhr.responseXML.getElementsByTagName("id")[0].textContent, true, callback);
-	};
+	}, false);
 	xhr.send(null);
 }
 

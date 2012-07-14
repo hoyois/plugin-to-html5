@@ -42,8 +42,8 @@ addKiller("Metacafe", {
 	var _this = this;
 	var xhr = new XMLHttpRequest();
 	var url = "http://www.metacafe.com/watch/" + videoID;
-	xhr.open('GET', url, true);
-	xhr.onload = function() {
+	xhr.open("GET", url, true);
+	xhr.addEventListener("load", function() {
 		var match = /name=\"flashvars\"\svalue=\"([^"]*)\"/.exec(xhr.responseText);
 		if(match) {
 			var callbackForEmbed = function(videoData) {
@@ -52,7 +52,7 @@ addKiller("Metacafe", {
 			};
 			_this.processFlashVars(match[1], callbackForEmbed);
 		}
-	};
+	}, false);
 	xhr.send(null);
 }
 

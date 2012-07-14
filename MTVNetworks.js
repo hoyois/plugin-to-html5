@@ -4,7 +4,7 @@ addKiller("MTVNetworks", {
 	"cms:video:thedailyshow.com:": "11",
 	"cms:episode:thedailyshow.com:": "1", // with tdslocal.mud => shadow.comedycentral.com
 	"cms:video:colbertnation.com:": "8",
-	"cms:episode:colbertnation.com:": "7", // not iPad-compatible
+	"cms:episode:colbertnation.com:": "7",
 	// "arc:video:gametrailers.com:": "1", // works without context
 	// "cms:item:southparkstudios.com:": "1", // works without context
 	"cms:content:southparkstudios.com:": "3",
@@ -13,7 +13,7 @@ addKiller("MTVNetworks", {
 	// "arc:video:comedycentral.com:": "1", // works without context
 	// "cms:video:tosh.comedycentral.com:": "1", // works without context
 	// "cms:promo:tosh.comedycentral.com:": "1", // works without context
-	"hcx:content:comedycentral.co.uk:": "3", // no example found
+	"hcx:content:comedycentral.co.uk:": "3"//, // no example found
 	// "cms:video:jokes.com:": "1", // works without context
 	// "uma:video:mtv.com:": "1" // works without context
 	// "uma:videolist:mtv.com:" // only works without context
@@ -31,10 +31,9 @@ addKiller("MTVNetworks", {
 	
 	var _this = this;
 	var xhr = new XMLHttpRequest();
-	console.log("http://media.mtvnservices.com/pmt/e1/players/mgid:" + mgid[1] + "/config.xml")
 	xhr.open("GET", "http://media.mtvnservices.com/pmt/e1/players/mgid:" + mgid[1] + context + "/config.xml", true);
 	xhr.addEventListener("load", function() {
-		var xml = xhr.responseXML;console.log(xml)
+		var xml = xhr.responseXML;
 		var feedURL = xml.getElementsByTagName("feed")[0].textContent.replace(/\n/g, "").replace("{uri}", mgid[0]);
 		if(mgid[1] === "cms:episode:thedailyshow.com:") {
 			feedURL = feedURL.replace("tdslocal.mud", "shadow.comedycentral.com");
@@ -49,7 +48,6 @@ addKiller("MTVNetworks", {
 	xhr.open("GET", feedURL, true);
 	xhr.addEventListener("load", function() {
 		var xml = new DOMParser().parseFromString(xhr.responseText.replace(/^\s+/,""), "text/xml");
-		console.log(xml);
 		var items = xml.getElementsByTagName("item");
 		
 		var list = [];
@@ -70,6 +68,8 @@ addKiller("MTVNetworks", {
 			list.push(obj);
 		}
 		
+		var length = list.length - 1;
+		
 		var next = function() {
 			if(list.length === 0) callback({"playlist": playlist});
 			else addToPlaylist(list.shift());
@@ -80,22 +80,27 @@ addKiller("MTVNetworks", {
 			xhr.open("GET", obj.content, true);
 			delete obj.content;
 			xhr.addEventListener("load", function() {
-				console.log(xhr.responseText)
 				var renditions = xhr.responseXML.getElementsByTagName("rendition");
+				
 				var sources = [];
-				for(var i = renditions.length -1 ; i >= 0; i--) {					
+				var src;
+				for(var i = renditions.length -1 ; i >= 0; i--) {
 					var source = typeInfo(renditions[i].getAttribute("type"));
 					if(source === null) continue;
 					source.format = renditions[i].getAttribute("bitrate") + "k " + source.format;
 					source.height = parseInt(renditions[i].getAttribute("height"));
-					source.url = renditions[i].getElementsByTagName("src")[0].textContent;	
-					source.url = "http://mtvnmobile.vo.llnwd.net/kip0/_pxn=0+_pxK=18639+_pxE=mp4/44620/mtvnorigin" + source.url.substring(source.url.indexOf("/gsp."));
+					src = renditions[i].getElementsByTagName("src")[0].textContent;
+					source.url = "http://mtvnmobile.vo.llnwd.net/kip0/_pxn=0+_pxK=18639/44620/mtvnorigin" + src.substring(src.indexOf("/gsp."));
 					sources.push(source);
 				}
-				if(sources.length !== 0) {
+				
+				if(sources.length === 0) {
+					if(list.length === length) return;
+				} else {
 					obj.sources = sources;
 					playlist.push(obj);
 				}
+				
 				next();
 			}, false);
 			xhr.send(null);

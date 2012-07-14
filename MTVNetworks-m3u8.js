@@ -13,7 +13,7 @@ addKiller("MTVNetworks", {
 	// "arc:video:comedycentral.com:": "1", // works without context
 	// "cms:video:tosh.comedycentral.com:": "1", // works without context
 	// "cms:promo:tosh.comedycentral.com:": "1", // works without context
-	"hcx:content:comedycentral.co.uk:": "3", // no example found
+	"hcx:content:comedycentral.co.uk:": "3"//, // no example found
 	// "cms:video:jokes.com:": "1", // works without context
 	// "uma:video:mtv.com:": "1" // works without context
 	// "uma:videolist:mtv.com:" // only works without context
@@ -31,10 +31,9 @@ addKiller("MTVNetworks", {
 	
 	var _this = this;
 	var xhr = new XMLHttpRequest();
-	console.log("http://media.mtvnservices.com/pmt/e1/players/mgid:" + mgid[1] + "/config.xml")
 	xhr.open("GET", "http://media.mtvnservices.com/pmt/e1/players/mgid:" + mgid[1] + context + "/config.xml", true);
 	xhr.addEventListener("load", function() {
-		var xml = xhr.responseXML;console.log(xml)
+		var xml = xhr.responseXML;
 		var feedURL = xml.getElementsByTagName("feed")[0].textContent.replace(/\n/g, "").replace("{uri}", mgid[0]);
 		if(mgid[1] === "cms:episode:thedailyshow.com:") {
 			feedURL = feedURL.replace("tdslocal.mud", "shadow.comedycentral.com");
@@ -49,7 +48,6 @@ addKiller("MTVNetworks", {
 	xhr.open("GET", feedURL, true);
 	xhr.addEventListener("load", function() {
 		var xml = new DOMParser().parseFromString(xhr.responseText.replace(/^\s+/,""), "text/xml");
-		console.log(xml);
 		var items = xml.getElementsByTagName("item");
 		
 		var mgidList = [];
@@ -70,6 +68,8 @@ addKiller("MTVNetworks", {
 			mgidList.push(mgidItem);
 		}
 		
+		var length = mgidList.length - 1;
+		
 		var next = function() {
 			if(mgidList.length === 0) callback({"playlist": playlist});
 			else addToPlaylist(mgidList.shift());
@@ -85,7 +85,9 @@ addKiller("MTVNetworks", {
 				if(videoURL) {
 					mgidItem.sources = [{"url": videoURL.textContent, "isNative": true}];
 					playlist.push(mgidItem);
-				} else console.log("No iPad!")
+				} else {
+					if(mgidList.length === length) return;
+				}
 				next();
 			}, false);
 			xhr.send(null);
