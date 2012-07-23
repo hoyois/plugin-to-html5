@@ -1,68 +1,66 @@
-// Flowplayer killer (2011-09-16)
-
 addKiller("Flowplayer", {
 
 "canKill": function(data) {
-	if(!/(?:^|&)config=/.test(data.params.flashvars)) return false;
-	if(/flowplayer[^\/]*\.swf/i.test(data.src)) {return true;}
-	if(/bimvid_player-[^\/.]*\.swf(?:\?|$)/.test(data.src)) {data.bim = true; return true;}
+	return /(?:^|&)config=/.test(data.params.flashvars);
 },
 
 "process": function(data, callback) {
-	var config = JSON.parse(decodeURIComponent(parseFlashVariables(data.params.flashvars).config));
-	var baseURL;
-	if(config.clip) baseURL = config.clip.baseUrl;
+	try {
+		var config = JSON.parse(decodeURIComponent(parseFlashVariables(data.params.flashvars).config));
+	} catch(e) {
+		return;
+	}
 	
-	var mediaURL, info;
+	var baseURL;
+	if(config.clip)	baseURL = config.clip.baseUrl;
+	
 	var playlist = [];
 	var audioOnly = true;
-	
-	var parseTitle = function(title) {return title};
-	if(data.bim) parseTitle = function(title) {return unescapeHTML(title.replace(/\+/g, " "));}
+	var splash;
 	
 	if(config.playList) config.playlist = config.playList;
-	if(typeof config.playlist === "object") {
-		for(var i = 0; i < config.playlist.length; i++) {
-			if(config.playlist[i].provider === "rtmp") continue;
-			mediaURL = config.playlist[i].url;
-			info = urlInfo(mediaURL);
-			if(info) {
-				if(config.playlist[i].baseUrl) baseURL = config.playlist[i].baseUrl;
-				if(baseURL) {
-					if(!/\/$/.test(baseURL)) baseURL += "/";
-					mediaURL = baseURL + mediaURL;
-				}
-				info.url = mediaURL;
-				// info.height = ?
-				playlist.push({
-					"title": parseTitle(config.playlist[i].title),
-					"poster": config.playlist[i].overlay,
-					"sources": [info]
-				});
-				if(!info.isAudio) audioOnly = false;
-			}
-		}
-	} else if(config.clip) {
-		if(config.clip.provider === "rtmp") return;
-		mediaURL = config.clip.url;
-		if(!mediaURL) return;
-		info = urlInfo(mediaURL);
-		if(info) {
-			if(baseURL) {
-				if(!/\/$/.test(baseURL)) baseURL += "/";
-				mediaURL = baseURL + mediaURL;
-			}
-			info.url = mediaURL;
-			playlist.push({
-				"title": parseTitle(config.playlist[i].title),
-				"poster": config.clip.overlay,
-				"sources": [info]
-			});
-			if(!info.isAudio) audioOnly = false;
-		}
-	} else return;
+	if(typeof config.playlist !== "object") {
+		if(config.clip) config.playlist = [config.clip];
+		else if(data.params.href) config.playlist = [data.params.href];
+		else return;
+	}
 	
-	callback({
+	config.playlist.forEach(function(clip) {
+		if(typeof clip === "string") clip = {"url": clip};
+		
+		if(clip.live) return;
+		if(clip.provider === "rtmp") return;
+		
+		var source = urlInfo(clip.url);
+		if(source) {
+			var base = clip.baseUrl ? clip.baseUrl : baseURL;
+			if(base && !/^https?:/.test(clip.url)) {
+				if(!/\/$/.test(base) && !/^\//.test(clip.url)) base += "/";
+				source.url = base + clip.url;
+			} else {
+				source.url = clip.url;
+			}
+			
+			var poster;
+			if(clip.coverImage) poster = clip.coverImage.url;
+			else if(clip.overlay) poster = clip.overlay;
+			else poster = splash;
+			splash = undefined;
+			
+			playlist.push({
+				"title": clip.title,
+				"poster": poster,
+				"sources": [source]
+			});
+			if(!source.isAudio) audioOnly = false;
+		} else {
+			var ext = extractExt(clip.url);
+			if(ext === "jpg" || ext === "png") splash = clip.url;
+			else splash = undefined;
+		}
+	});
+	
+	if(playlist.length !== 0) callback({
 		"playlist": playlist,
 		"audioOnly": audioOnly
 	});
