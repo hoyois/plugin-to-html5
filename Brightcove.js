@@ -7,7 +7,7 @@ addKiller("Brightcove", {
 "process": function(data, callback) {
 	var isSecure = data.src.charAt(4) === "s";
 	var url;
-	if(/[&?]playerKey=/.test(data.src)) {
+	if(/[&?]playerID=/.test(data.src)) {
 		url = data.src.replace("federated_f9", "htmlFederated");
 	} else {
 		var flashvars = parseFlashVariables(data.params.flashvars);
