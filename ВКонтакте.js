@@ -1,4 +1,4 @@
-// ВКонтакте killer (2012-02-05)
+// ВКонтакте killer (2012-08-13)
 
 addKiller("ВКонтакте", {
 
@@ -23,10 +23,10 @@ addKiller("ВКонтакте", {
 		if(hd >= 1) sources.push({"url": url + "360.mp4", "format": "360p MP4", "height": 360, "isNative": true});
 		if(flashvars.no_flv === "1") {
 			sources.push({"url": url + "240.mp4", "format": "240p MP4", "height": 240, "isNative": true});
-		} else {
+		} else if(canPlayFLV) {
 			sources.push({"url": url + "flv", "format": "240p FLV", "height": 240, "isNative": false});
 		}
-	} else {
+	} else if(canPlayFLV) {
 		if(!/^http:/.test(host)) host = "http://" + host;
 		var url = host + "/assets/video/" + decodeURIComponent(flashvars.vtag) + decodeURIComponent(flashvars.vkid) + ".vk.flv";
 		sources.push({"url": url, "format": "240p FLV", "height": 240, "isNative": false});
