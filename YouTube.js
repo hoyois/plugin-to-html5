@@ -7,8 +7,16 @@ addKiller("YouTube", {
 	if(itag === "18") return {"format": "360p MP4", "height": 360, "isNative": true};
 	if(canPlayFLV) {
 		if(itag === "35") return {"format": "480p FLV", "height": 480, "isNative": false};
+		//if(itag === "34") return {"format": "360p FLV", "height": 360, "isNative": false};
+		//if(itag === "6") return {"format": "270p FLV", "height": 270, "isNative": false};
 		if(itag === "5") return {"format": "240p FLV", "height": 240, "isNative": false};
 	}
+	/*if(canPlayWebM) {
+		if(itag === "46") return {"format": "1080p WebM", "height": 1080, "isNative": false};
+		if(itag === "45") return {"format": "720p WebM", "height": 720, "isNative": false};
+		if(itag === "44") return {"format": "480p WebM", "height": 480, "isNative": false};
+		if(itag === "43") return {"format": "360p WebM", "height": 360, "isNative": false};
+	}*/
 	return false;
 },
 
