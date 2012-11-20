@@ -17,7 +17,7 @@ addKiller("ВКонтакте", {
 	var hd = parseInt(flashvars.hd);
 	
 	if(flashvars.uid && flashvars.uid !== "0") {
-		var url = "http://cs" + host + ".vk.com/u" + decodeURIComponent(flashvars.uid) + "/video/" + decodeURIComponent(flashvars.vtag) + ".";
+		var url = "http://cs" + host + ".vk.com/u" + decodeURIComponent(flashvars.uid) + "/videos/" + decodeURIComponent(flashvars.vtag) + ".";
 		if(hd >= 3) sources.push({"url": url + "720.mp4", "format": "720p MP4", "height": 720, "isNative": true,});
 		if(hd >= 2) sources.push({"url": url + "480.mp4", "format": "480p MP4", "height": 480, "isNative": true,});
 		if(hd >= 1) sources.push({"url": url + "360.mp4", "format": "360p MP4", "height": 360, "isNative": true});
