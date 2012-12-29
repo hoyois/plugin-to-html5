@@ -26,15 +26,30 @@ addKiller("CollegeHumor", {
 			return;
 		}
 		
+		var videoURL = video.querySelector("file").textContent;
+		if(!/\.mp4$/.test(videoURL)) return;
+		
+		var sources = [{
+			"url": videoURL,
+			"format": "360p MP4",
+			"height": 360,
+			"isNative": true
+		}];
+		
+		var hq = video.querySelector("hq");
+		if(hq) {
+			sources.unshift({
+				"url": hq.textContent,
+				"format": "HQ MP4",
+				"height": 480,
+				"isNative": true
+			});
+		}
+		
 		callback({"playlist": [{
 			"title": video.querySelector("caption").textContent,
 			"poster": video.querySelector("thumbnail").textContent,
-			"sources": [{
-				"url": video.querySelector("file").textContent,
-				"format": "360p MP4",
-				"height": 360,
-				"isNative": true
-			}]
+			"sources": sources
 		}]});
 	}, false);
 	xhr.send(null);
