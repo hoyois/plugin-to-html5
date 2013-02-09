@@ -29,7 +29,7 @@ addKiller("YouTube", {
 "process": function(data, callback) {
 	
 	if(data.embed) { // old-style YT embed
-		var match = /\.com\/([vpe])\/([^&?]+)/.exec(data.src);
+		var match = /\.com\/([vpe])\/+([^&?]+)/.exec(data.src);
 		if(match) {
 			if(match[1] === "p") this.processPlaylistID("PL" + match[2], {}, callback);
 			else this.processVideoID(match[2], callback);
