@@ -27,7 +27,7 @@ addKiller("Blip", {
 		var xml = xhr.responseXML;
 		var media = xml.getElementsByTagNameNS("http://search.yahoo.com/mrss/", "content");
 		var sources = [];
-		var url, info, height, width, audioOnly = true;
+		var url, info, height, audioOnly = true;
 		
 		for(var i = 0; i < media.length; i++) {
 			url = media[i].getAttribute("url");
@@ -35,9 +35,8 @@ addKiller("Blip", {
 			if(!info) continue;
 			if(!info.isAudio) audioOnly = false;
 			height = media[i].getAttribute("height");
-			width = media[i].getAttribute("width");
 			info.url = url;
-			info.format = media[i].getAttributeNS("http://blip.tv/dtd/blip/1.0", "role") + ((info.isAudio || !height) ? "" : " (" + width + "x" + height + ")") + " " + info.format;
+			info.format = media[i].getAttributeNS("http://blip.tv/dtd/blip/1.0", "role") + " " + info.format;
 			info.height = parseInt(height);
 			sources.push(info);
 		}
