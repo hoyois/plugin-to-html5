@@ -1,47 +1,36 @@
 addKiller("IGN", {
 
 "canKill": function(data) {
-	return /media.ign.com\/ev\/\w+\/embed\.swf/.test(data.src);
+	return /\/IGNPlayer\.swf/.test(data.src);
 },
 
 "process": function(data, callback) {
-	var flashvars = parseFlashVariables(data.params.flashvars);
-	
-	var url;
-	if(flashvars.config) {
-		url = JSON.parse(decodeURIComponent(flashvars.config)).plugins.igncontrolbar.doc_referer;
-	} else if(flashvars.url) {
-		url = decodeURIComponent(flashvars.url);
-	} else return;
-	
-	url = url.replace(/[?#].*/g, "");
-	
-	var siteInfo;
-	if(!/^http:\/\/www\.ign\.com\/videos\//.test(data.location) && /^http:\/\/www\.ign\.com/.test(url)) siteInfo = {"name": "IGN", "url": url};
+	var configURL = decodeURIComponent(parseFlashVariables(data.params.flashvars).url).replace(/[?#].*/, "");
+	if(!/\.config$/.test(configURL)) configURL += ".config";
 	
 	var _this = this;
 	var xhr = new XMLHttpRequest();
-	xhr.open('GET', url + ".config", true);
-	xhr.onload = function() {
-		_this.processConfig(JSON.parse(xhr.responseText), siteInfo, callback);
-	};
+	xhr.open("GET", configURL, true);
+	xhr.addEventListener("load", function() {
+		_this.processConfig(JSON.parse(xhr.responseText), !/^http:\/\/www\.ign\.com\/videos\//.test(data.location), callback);
+	}, false);
 	xhr.send(null);
 },
 
-"processConfig": function(config, siteInfo, callback) {
-	var title = decodeURIComponent(config.plugins.igncontrolbar.doc_title);
+"processConfig": function(config, isEmbed, callback) {
+	var media = config.playlist.media;
 	
-	var sources = [];
-	config.playlist[1].bitrates.forEach(function(bitrate) {
-		if(bitrate.height && bitrate.url)
-			sources.unshift({"url": bitrate.url.replace(/mp4:/,"http://assets.ign.com/") , "format":  bitrate.height + "p MP4", "height": bitrate.height, "isNative": true});
-	});
+	var siteInfo;
+	if(isEmbed) siteInfo = {"name": "IGN", "url": media.metadata.url.replace(/\\\//g, "/")};
+	
+	var videoURL = media.url.replace(/\\\//g, "/");
+	var poster = media.poster[0].url.replace(/\\\//g, "/").replace(/\{size\}/, "large");
 	
 	callback({
 		"playlist": [{
-			"title": title,
-			"sources": sources,
-			"poster": config.playlist[0].url,
+			"title": media.metadata.title,
+			"sources": [{"url": videoURL, "format": "MP4", "height": "720", "isNative": true}],
+			"poster": poster,
 			"siteInfo": siteInfo
 		}]
 	});
