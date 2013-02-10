@@ -29,7 +29,7 @@ addKiller("IGN", {
 	callback({
 		"playlist": [{
 			"title": media.metadata.title,
-			"sources": [{"url": videoURL, "format": "MP4", "height": "720", "isNative": true}],
+			"sources": [{"url": videoURL, "format": "MP4", "height": 720, "isNative": true}],
 			"poster": poster,
 			"siteInfo": siteInfo
 		}]
