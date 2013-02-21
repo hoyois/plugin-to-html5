@@ -1,23 +1,27 @@
 addKiller("YouTube", {
 
-"getInfo": function(itag) {
+"processItag": function(itag) {
 	if(itag === "38") return {"format": "4K MP4", "height": 2304, "isNative": true};
 	if(itag === "37") return {"format": "1080p MP4", "height": 1080, "isNative": true};
 	if(itag === "22") return {"format": "720p MP4", "height": 720, "isNative": true};
 	if(itag === "18") return {"format": "360p MP4", "height": 360, "isNative": true};
 	if(canPlayFLV) {
 		if(itag === "35") return {"format": "480p FLV", "height": 480, "isNative": false};
-		//if(itag === "34") return {"format": "360p FLV", "height": 360, "isNative": false};
-		//if(itag === "6") return {"format": "270p FLV", "height": 270, "isNative": false};
 		if(itag === "5") return {"format": "240p FLV", "height": 240, "isNative": false};
 	}
-	/*if(canPlayWebM) {
-		if(itag === "46") return {"format": "1080p WebM", "height": 1080, "isNative": false};
-		if(itag === "45") return {"format": "720p WebM", "height": 720, "isNative": false};
-		if(itag === "44") return {"format": "480p WebM", "height": 480, "isNative": false};
-		if(itag === "43") return {"format": "360p WebM", "height": 360, "isNative": false};
-	}*/
 	return false;
+},
+
+"decode": function(s) {
+	switch(s.length) {
+	case 85:
+		s = s.split("").reverse().join("");
+		return s.substring(1,60) + s.substring(0,1) + s.substring(61,82);
+	case 86:
+		return s.substring(6,7) + s.substring(1,3) + s.substring(62,63) + s.substring(7,43) + s.substring(0,1) + s.substring(56,57) + s.substring(45,56) + s.substring(43,44) + s.substring(57,62) + s.substring(3,4) + s.substring(63,84);
+	case 87: // TBI
+		return s;
+	}
 },
 
 "canKill": function(data) {
@@ -39,8 +43,6 @@ addKiller("YouTube", {
 	
 	var flashvars = parseFlashVariables(data.params.flashvars);
 	var onsite = flashvars.t && flashvars.url_encoded_fmt_stream_map;
-	
-	if(/\s-\sYouTube$/.test(data.title)) flashvars.title = data.title.slice(0, -10);
 	
 	if(onsite) {
 		var match = /[#&?]t=(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?/.exec(data.location);
@@ -99,22 +101,11 @@ addKiller("YouTube", {
 	var x;
 	for(var i = 0; i < formatList.length; i++) {
 		x = parseFlashVariables(formatList[i]);
-		var source = this.getInfo(x.itag);
+		var source = this.processItag(x.itag);
 		if(source) {
-			source.url = decodeURIComponent(x.url) + "&title=" + encodeURIComponent(flashvars.title);
+			source.url = decodeURIComponent(x.url) + "&title=" + flashvars.title;
 			if(x.sig) source.url += "&signature=" + x.sig;
-			else if(x.s) source.url += "&signature="
-				+ x.s.substring(6,7)
-				+ x.s.substring(1,3)
-				+ x.s.substring(62,63)
-				+ x.s.substring(7,43)
-				+ x.s.substring(0,1)
-				+ x.s.substring(56,57)
-				+ x.s.substring(45,56)
-				+ x.s.substring(43,44)
-				+ x.s.substring(57,62)
-				+ x.s.substring(3,4)
-				+ x.s.substring(63,84);
+			else if(x.s) source.url += "&signature=" + this.decode(x.s);
 			sources.push(source);
 		}
 	}
@@ -125,7 +116,11 @@ addKiller("YouTube", {
 	else posterURL = "https://i.ytimg.com/vi/" + flashvars.video_id + "/hqdefault.jpg";
 	
 	callback({
-		"playlist": [{"title": flashvars.title, "poster": posterURL, "sources": sources}],
+		"playlist": [{
+			"title": decodeURIComponent(flashvars.title.replace(/\+/g, " ")),
+			"poster": posterURL,
+			"sources": sources
+		}],
 		"startTime": parseInt(flashvars.start),
 		"initScript": flashvars.initScript,
 		"restoreScript": flashvars.restoreScript
@@ -139,7 +134,6 @@ addKiller("YouTube", {
 	xhr.addEventListener("load", function() {
 		var flashvars = parseFlashVariables(xhr.responseText);
 		if(flashvars.status === "ok" && flashvars.ps !== "live") {
-			flashvars.title = decodeURIComponent(flashvars.title.replace(/\+/g, " "));
 			var callbackForEmbed = function(videoData) {
 				videoData.playlist[0].siteInfo = {"name": "YouTube", "url": "http://www.youtube.com/watch?v=" + videoID};
 				callback(videoData);
