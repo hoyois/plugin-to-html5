@@ -21,6 +21,8 @@ addKiller("YouTube", {
 		return s.substring(6,7) + s.substring(1,3) + s.substring(62,63) + s.substring(7,43) + s.substring(0,1) + s.substring(56,57) + s.substring(45,56) + s.substring(43,44) + s.substring(57,62) + s.substring(3,4) + s.substring(63,84);
 	case 87: // TBI
 		return s;
+	default:
+		return s;
 	}
 },
 
