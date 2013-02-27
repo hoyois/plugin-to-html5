@@ -1,31 +1,5 @@
 addKiller("YouTube", {
 
-"processItag": function(itag) {
-	if(itag === "38") return {"format": "4K MP4", "height": 2304, "isNative": true};
-	if(itag === "37") return {"format": "1080p MP4", "height": 1080, "isNative": true};
-	if(itag === "22") return {"format": "720p MP4", "height": 720, "isNative": true};
-	if(itag === "18") return {"format": "360p MP4", "height": 360, "isNative": true};
-	if(canPlayFLV) {
-		if(itag === "35") return {"format": "480p FLV", "height": 480, "isNative": false};
-		if(itag === "5") return {"format": "240p FLV", "height": 240, "isNative": false};
-	}
-	return false;
-},
-
-"decode": function(s) {
-	switch(s.length) {
-	case 85:
-		s = s.split("").reverse().join("");
-		return s.substring(1,60) + s.substring(0,1) + s.substring(61,82);
-	case 86:
-		return s.substring(6,7) + s.substring(1,3) + s.substring(62,63) + s.substring(7,43) + s.substring(0,1) + s.substring(56,57) + s.substring(45,56) + s.substring(43,44) + s.substring(57,62) + s.substring(3,4) + s.substring(63,84);
-	case 87: // TBI
-		return s;
-	default:
-		return s;
-	}
-},
-
 "canKill": function(data) {
 	if(/^https?:\/\/s\.ytimg\.com\//.test(data.src)) return true;
 	if(/^https?:\/\/(?:www\.)?youtube(?:-nocookie|\.googleapis)?\.com\//.test(data.src)) {data.embed = true; return true;}
@@ -33,7 +7,6 @@ addKiller("YouTube", {
 },
 
 "process": function(data, callback) {
-	
 	if(data.embed) { // old-style YT embed
 		var match = /\.com\/([vpe])\/+([^&?]+)/.exec(data.src);
 		if(match) {
@@ -47,7 +20,9 @@ addKiller("YouTube", {
 	var onsite = flashvars.t && flashvars.url_encoded_fmt_stream_map;
 	
 	if(onsite) {
-		var match = /[#&?]t=(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?/.exec(data.location);
+		var match = /as3-vfl(.{6})\.swf/.exec(data.src);
+		if(match) flashvars.key = match[1];
+		match = /[#&?]t=(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?/.exec(data.location);
 		if (match) {
 			var hours = parseInt(match[1], 10) || 0;
 			var minutes = parseInt(match[2], 10) || 0;
@@ -56,43 +31,40 @@ addKiller("YouTube", {
 		}
 		
 		flashvars.initScript = "\
-			var tries = 0;\
-			var intervalID = setInterval(function() {\
-				try{\
-					if(!mediaElement.parentNode) throw null;\
-					yt.www.watch.player.oldSeekTo = yt.www.watch.player.seekTo;\
-					yt.www.watch.player.seekTo = function(time) {\
-						var seek = function() {\
-							mediaElement.removeEventListener(\"loadeddata\", seek, false);\
-							mediaElement.currentTime = time;\
-							mediaElement.play();\
-						};\
-						if(mediaElement.readyState >= mediaElement.HAVE_CURRENT_DATA) {\
-							mediaElement.pause();\
-							seek();\
-						} else {\
-							mediaElement.preload = \"auto\";\
-							mediaElement.addEventListener(\"loadeddata\", seek, false);\
-						}\
-						mediaElement.parentNode.focus();\
+			try{\
+				if(!mediaElement.parentNode) throw null;\
+				var seekTo = function(time) {\
+					var seek = function() {\
+						mediaElement.removeEventListener(\"loadeddata\", seek, false);\
+						mediaElement.currentTime = time;\
+						mediaElement.play();\
 					};\
-					clearInterval(intervalID);\
-				} catch(e) {\
-					if(++tries > 100 || e === null) clearInterval(intervalID);\
-				}\
-			}, 100);";
+					if(mediaElement.readyState >= mediaElement.HAVE_CURRENT_DATA) {\
+						mediaElement.pause();\
+						seek();\
+					} else {\
+						mediaElement.preload = \"auto\";\
+						mediaElement.addEventListener(\"loadeddata\", seek, false);\
+					}\
+					mediaElement.parentNode.focus();\
+				};\
+				window.yt = window.yt || {}; yt.www = yt.www || {}; yt.www.watch = yt.www.watch || {}; yt.www.watch.player = yt.www.watch.player || {};\
+				yt.www.watch.player.flashSeekTo = yt.www.watch.player.seekTo;\
+				Object.defineProperty(yt.www.watch.player, \"seekTo\", {\"get\": function() {return seekTo;}, \"set\": function(x) {yt.www.watch.player.flashSeekTo = x;}, \"configurable\": false, \"enumerable\": false});\
+			} catch(e) {}";
 		flashvars.restoreScript = "\
 			try{\
-				if(yt.www.watch.player.oldSeekTo) yt.www.watch.player.seekTo = yt.www.watch.player.oldSeekTo;\
+				var player = {\"seekTo\": yt.www.watch.player.flashSeekTo};\
+				for(var e in yt.www.watch.player) {\
+					if(e !== \"flashSeekTo\") player[e] = yt.www.watch.player[e];\
+				}\
+				yt.www.watch.player = player;\
 			} catch(e) {}";
 	}
 	
 	if(/^PL|^SP|^UL/.test(flashvars.list) && flashvars.feature !== "channel") this.processPlaylistID(flashvars.list, flashvars, callback);
 	else if(onsite) this.processFlashVars(flashvars, callback);
-	else if(flashvars.video_id) this.processVideoID(flashvars.video_id, function(mediaData) {
-		mediaData.startTime = parseInt(flashvars.start);
-		callback(mediaData);
-	});
+	else if(flashvars.video_id) this.processVideoID(flashvars.video_id, callback);
 },
 
 "processFlashVars": function(flashvars, callback) {
@@ -107,7 +79,7 @@ addKiller("YouTube", {
 		if(source) {
 			source.url = decodeURIComponent(x.url) + "&title=" + flashvars.title;
 			if(x.sig) source.url += "&signature=" + x.sig;
-			else if(x.s) source.url += "&signature=" + this.decode(x.s);
+			else if(x.s) source.url += "&signature=" + this.decodeSignature(x.s, flashvars.key);
 			sources.push(source);
 		}
 	}
@@ -234,6 +206,58 @@ addKiller("YouTube", {
 		}
 		break;
 	}
+},
+
+"processItag": function(itag) {
+	if(itag === "38") return {"format": "4K MP4", "height": 2304, "isNative": true};
+	if(itag === "37") return {"format": "1080p MP4", "height": 1080, "isNative": true};
+	if(itag === "22") return {"format": "720p MP4", "height": 720, "isNative": true};
+	if(itag === "18") return {"format": "360p MP4", "height": 360, "isNative": true};
+	if(canPlayFLV) {
+		if(itag === "35") return {"format": "480p FLV", "height": 480, "isNative": false};
+		if(itag === "5") return {"format": "240p FLV", "height": 240, "isNative": false};
+	}
+	return false;
+},
+
+"decodeSignature": function(s, key) {
+	s = s.split("");
+	var L = s.length;
+	var reverse = function() {s = s.reverse();};
+	var slice = function(a,b) {s = s.slice(a,b+L);};
+	var cycle = function() {
+		var x = [];
+		var l = arguments.length;
+		var tmp;
+		for(var i = l-1; i >= 0; --i) {
+			x[i] = arguments[i];
+			if(x[i] < 0) x[i] += L;
+			if(i === l-1) tmp = s[x[i]];
+			else s[x[i+1]] = s[x[i]];
+		}
+		s[x[0]] = tmp;
+	};
+	
+	switch(key) {
+	case "VIZAvA": cycle(0,43,56,44); cycle(3,62,6); slice(3,-2); break;
+	case "lpXa0y": cycle(2,48); cycle(-46,-3); cycle(-28,-1); slice(2,-4); break;
+	case "cky2Yk": cycle(0,6); cycle(-23,-2); slice(0,-1); break;
+	case "JKo6LT": cycle(0,10); cycle(6,65); slice(6,-1); break;
+	case "97HaY5": slice(3,-3); break;
+	case "X3vz3j": cycle(0,27); cycle(-54,-32,-1); slice(2,0); break;
+	case "-KqBih": reverse(); cycle(-26,-22,-2,-21); cycle(-23,-1); slice(0,-2); break;
+	case "rHY3xi": reverse(); cycle(0,54,21,34); cycle(-16,-1); slice(2,0); break;
+	case "p80jd_": reverse(); cycle(0,30); cycle(-51,-5); cycle(-18,-2); slice(0,-4); break;
+	case "6fbJ-B": reverse(); cycle(2,36); cycle(3,46); cycle(-65,-2); cycle(-16,-4); slice(3,-3); break;
+	case "XPuwnw": reverse(); cycle(0,60); cycle(3,44); slice(3,0); break;
+	case "7DhXER": reverse(); cycle(0,59); cycle(-57,-51,-3); cycle(-19,-1); slice(0,-5); break;
+	case "bRE_EL": reverse(); cycle(2,69); slice(2,-4); break;
+	case "_769QM": reverse(); cycle(0,60); slice(1,-3); break;
+	case "StOJYe":
+	case "n3UefM":
+	default:       reverse(); cycle(-66,-1); slice(2,-2); break;
+	}
+	return s.join("");
 }
 
 });
