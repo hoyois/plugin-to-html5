@@ -1,3 +1,87 @@
+"use strict";
+var settings = safari.extension.settings;
+var secureSettings = safari.extension.secureSettings;
+
+function loadScripts() { // add scripts to the global page in order
+	var i = 0;
+	var args = arguments;
+	var load = function() {
+		var scriptElement = document.createElement("script");
+		scriptElement.src = args[i];
+		scriptElement.addEventListener("load", next, false);
+		scriptElement.addEventListener("error", next, false);
+		document.head.appendChild(scriptElement);
+	};
+	var next = function(event) {
+		event.target.removeEventListener("load", next, false);
+		event.target.removeEventListener("error", next, false);
+		if(++i < args.length) load();
+	};
+	load();
+}
+
+function dispatchMessageToAllPages(name, message) {
+	for(var i = 0; i < safari.application.browserWindows.length; i++) {
+		for(var j = 0; j < safari.application.browserWindows[i].tabs.length; j++) {
+			// Tabs such as Bookmarks or Top Sites do not have the .page proxy
+			if(safari.application.browserWindows[i].tabs[j].page) {
+				safari.application.browserWindows[i].tabs[j].page.dispatchMessage(name, message);
+			}
+		}
+	}
+}
+
+function reloadTab(tab) {
+	if(tab.url) tab.url = tab.url; // lol
+}
+
+function openTab(url) {
+	var tab;
+	if(safari.application.activeBrowserWindow) tab = safari.application.activeBrowserWindow.openTab("foreground");
+	else tab = safari.application.openBrowserWindow().activeTab;
+	tab.url = url;
+}
+
+function airplay(url) {
+	var xhr = new XMLHttpRequest();
+	var port = ":7000";
+	if(/:\d+$/.test(settings.airplayHostname)) port = "";
+	xhr.open("POST", "http://" + settings.airplayHostname + port + "/play", true, "AirPlay", secureSettings.getItem("airplayPassword"));
+	xhr.addEventListener("load", function() {
+		// Set timer to prevent playback from aborting
+		var timer = setInterval(function() {
+			var xhr = new XMLHttpRequest();
+			xhr.open("GET", "http://" + settings.airplayHostname + port + "/playback-info", true, "AirPlay", secureSettings.getItem("airplayPassword"));
+			xhr.addEventListener("load", function() {
+				if(xhr.responseXML.getElementsByTagName("key").length === 0) { // playback terminated
+					clearInterval(timer);
+				}
+			}, false);
+			xhr.addEventListener("error", function() {clearInterval(timer);}, false);
+			xhr.send(null);
+		}, 1000);
+	}, false);
+	xhr.send("Content-Location: " + url + "\nStart-Position: 0\n");
+}
+
+function matchList(list, string) {
+	var s;
+	for(var i = 0; i < list.length; i++) {
+		s = list[i];
+		if(s.charAt(0) === "@") { // if s starts with '@', interpret as regexp
+			try {
+				s = new RegExp(s.substring(1));
+			} catch(e) { // invalid regexp: ignore
+				continue;
+			}
+			if(s.test(string)) return true;
+		} else { // regular string match
+			if(string.indexOf(s) !== -1) return true;
+		}
+	}
+	return false;
+}
+
 function getMIMEType(resourceURL, handleMIMEType) {
 	var xhr = new XMLHttpRequest();
 	xhr.open('HEAD', resourceURL, true);
@@ -54,7 +138,7 @@ function parseWithRegExp(text, regex, processValue) { // regex needs 'g' flag
 	return obj;
 }
 function parseFlashVariables(s) {return parseWithRegExp(s, /([^&=]*)=([^&]*)/g);}
-function parseSLVariables(s) {return parseWithRegExp(s, /\s?([^,=]*)=([^,]*)/g);}
+function parseSLVariables(s) {return parseWithRegExp(s, /\s*([^,=]*)=([^,]*)/g);}
 
 function extractDomain(url) {
 	return /\/\/([^\/]+)\//.exec(url)[1];
@@ -67,6 +151,35 @@ function extractExt(url) {
 	i = url.lastIndexOf(".");
 	if(i === -1) return "";
 	return url.substring(i + 1).toLowerCase().trimRight();
+}
+
+function chooseDefaultSource(sources) {
+	var defaultSource;
+	var hasNativeSource = false;
+	var resolutionMap = [];
+	
+	for(var i = sources.length - 1; i >= 0; i--) {
+		var h = sources[i].height;
+		if(!h) h = 0;
+		if(!sources[i].isNative && (settings.codecsPolicy !== 3 || resolutionMap[h] !== undefined)) continue;
+		resolutionMap[h] = i;
+	}
+	if(resolutionMap.length === 0) {
+		if(settings.codecsPolicy !== 2) return undefined;
+		for(var i = sources.length - 1; i >= 0; i--) {
+			var h = sources[i].height;
+			resolutionMap[h?h:0] = i;
+		}
+	}
+	
+	for(var h in resolutionMap) {
+		if(h > settings.defaultResolution) {
+			if(defaultSource === undefined) defaultSource = resolutionMap[h];
+			break;
+		}
+		defaultSource = resolutionMap[h];
+	}
+	return defaultSource;
 }
 
 function parseXSPlaylist(playlistURL, baseURL, altPosterURL, track, handlePlaylistData) {

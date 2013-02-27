@@ -20,7 +20,7 @@ addKiller("YouTube", {
 	var onsite = flashvars.t && flashvars.url_encoded_fmt_stream_map;
 	
 	if(onsite) {
-		var match = /as3-vfl(.{6})\.swf/.exec(data.src);
+		var match = /_as3-vfl(.{6})\.swf/.exec(data.src);
 		if(match) flashvars.key = match[1];
 		match = /[#&?]t=(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?/.exec(data.location);
 		if (match) {
@@ -227,12 +227,11 @@ addKiller("YouTube", {
 	var slice = function(a,b) {s = s.slice(a,b+L);};
 	var cycle = function() {
 		var x = [];
-		var l = arguments.length;
 		var tmp;
-		for(var i = l-1; i >= 0; --i) {
+		for(var i = arguments.length-1; i >= 0; --i) {
 			x[i] = arguments[i];
 			if(x[i] < 0) x[i] += L;
-			if(i === l-1) tmp = s[x[i]];
+			if(tmp === undefined) tmp = s[x[i]];
 			else s[x[i+1]] = s[x[i]];
 		}
 		s[x[0]] = tmp;
