@@ -238,12 +238,18 @@ addKiller("YouTube", {
 	};
 	
 	switch(key) {
+	case "Cqc2WH": cycle(0,69,50,18); slice(0,-1); break;
+	case "I42Qyn":
+	case "uHfcbC": cycle(0,22); cycle(1,27); slice(3,0); break;
 	case "VIZAvA": cycle(0,43,56,44); cycle(3,62,6); slice(3,-2); break;
 	case "lpXa0y": cycle(2,48); cycle(-46,-3); cycle(-28,-1); slice(2,-4); break;
 	case "cky2Yk": cycle(0,6); cycle(-23,-2); slice(0,-1); break;
 	case "JKo6LT": cycle(0,10); cycle(6,65); slice(6,-1); break;
 	case "97HaY5": slice(3,-3); break;
 	case "X3vz3j": cycle(0,27); cycle(-54,-32,-1); slice(2,0); break;
+	case "StOJYe":
+	case "n3UefM": reverse(); cycle(-66,-1); slice(2,-2); break;
+	case "UukykH": reverse(); cycle(0,4); cycle(-35,-1,-32); break;
 	case "-KqBih": reverse(); cycle(-26,-22,-2,-21); cycle(-23,-1); slice(0,-2); break;
 	case "rHY3xi": reverse(); cycle(0,54,21,34); cycle(-16,-1); slice(2,0); break;
 	case "p80jd_": reverse(); cycle(0,30); cycle(-51,-5); cycle(-18,-2); slice(0,-4); break;
@@ -252,9 +258,6 @@ addKiller("YouTube", {
 	case "7DhXER": reverse(); cycle(0,59); cycle(-57,-51,-3); cycle(-19,-1); slice(0,-5); break;
 	case "bRE_EL": reverse(); cycle(2,69); slice(2,-4); break;
 	case "_769QM": reverse(); cycle(0,60); slice(1,-3); break;
-	case "StOJYe":
-	case "n3UefM":
-	default:       reverse(); cycle(-66,-1); slice(2,-2); break;
 	}
 	return s.join("");
 }
