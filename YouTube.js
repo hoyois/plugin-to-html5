@@ -183,7 +183,6 @@ addKiller("YouTube", {
 			} else _this.processVideoID(videoIDList.shift(), next);
 		};
 		_this.processVideoID(videoIDList.shift(), next);
-		return;
 	};
 	
 	if(/^UL/.test(playlistID)) {
@@ -232,6 +231,7 @@ addKiller("YouTube", {
 	};
 	
 	switch(key) {
+	case "cwIWb1": cycle(0,27); cycle(2,52,45); cycle(5,70); cycle(6,17); slice(6,0); break;
 	case "quSbps": cycle(0,8,32); cycle(-72,-2); slice(2,-2); break;
 	case "Tuq3X1": cycle(0,22); cycle(2,59,46,39); slice(5,-3); break;
 	case "Cqc2WH": cycle(0,69,50,18); slice(0,-1); break;
@@ -243,6 +243,8 @@ addKiller("YouTube", {
 	case "JKo6LT": cycle(0,10); cycle(6,65); slice(6,-1); break;
 	case "97HaY5": slice(3,-3); break;
 	case "X3vz3j": cycle(0,27); cycle(-54,-32,-1); slice(2,0); break;
+	case "VaILSS": reverse(); cycle(0,49); slice(2,0); break;
+	case "FbM36W": reverse(); cycle(-54,-2,-53); slice(0,-1); break;
 	case "-kGkL5": reverse(); cycle(2,31,36); cycle(-64,-4); slice(2,-3); break;
 	case "c6V7jE": reverse(); cycle(-56,-5); cycle(-9,-2); cycle(-7,-1); slice(2,-4); break;
 	case "meox68": reverse(); cycle(3,15); cycle(-39,-3); slice(3,-2); break;
