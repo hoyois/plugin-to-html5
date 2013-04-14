@@ -231,6 +231,7 @@ addKiller("YouTube", {
 	};
 	
 	switch(key) {
+	case "5qlEPI": cycle(2,66); slice(5,0); break;
 	case "cwIWb1": cycle(0,27); cycle(2,52,45); cycle(5,70); cycle(6,17); slice(6,0); break;
 	case "quSbps": cycle(0,8,32); cycle(-72,-2); slice(2,-2); break;
 	case "Tuq3X1": cycle(0,22); cycle(2,59,46,39); slice(5,-3); break;
@@ -243,6 +244,13 @@ addKiller("YouTube", {
 	case "JKo6LT": cycle(0,10); cycle(6,65); slice(6,-1); break;
 	case "97HaY5": slice(3,-3); break;
 	case "X3vz3j": cycle(0,27); cycle(-54,-32,-1); slice(2,0); break;
+	case "B3Uygd":
+	case "T_0rBY":
+	case "01dCpm":
+	case "jjFV5L":
+	case "iSj7bA": reverse(); cycle(-37,-3); cycle(-27,-4); slice(0,-4) break;
+	case "FZFBBO":
+	case "yavNDg":
 	case "lSKff3":
 	case "fLxeEc": reverse(); cycle(0,14,48,41); cycle(1,45); cycle(-35,-1); slice(1,0); break;
 	case "VaILSS": reverse(); cycle(0,49); slice(2,0); break;
