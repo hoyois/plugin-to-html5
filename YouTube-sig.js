@@ -48,7 +48,7 @@ addKiller("YouTube", {
 	};
 	
 	if(playlistID) this.processPlaylist(playlistID, flashvars, mainCallback, callback);
-	else if(onsite && /%26sig%3D/.test(flashvars.url_encoded_fmt_stream_map)) this.processFlashVars(flashvars, mainCallback);
+	else if(onsite) this.processFlashVars(flashvars, mainCallback);
 	else if(videoID) this.processVideoID(videoID, mainCallback);
 },
 
@@ -82,6 +82,7 @@ addKiller("YouTube", {
 		if(source) {
 			source.url = decodeURIComponent(x.url) + "&title=" + flashvars.title + encodeURIComponent(" [" + source.format.split(" ")[0] + "]");
 			if(x.sig) source.url += "&signature=" + x.sig;
+			else if(x.s) source.url += "&signature=" + this.decodeSignature(x.s, flashvars.key);
 			sources.push(source);
 		}
 	}
@@ -210,6 +211,69 @@ addKiller("YouTube", {
 		if(itag === "5") return {"format": "240p FLV", "height": 240, "isNative": false};
 	}
 	return false;
+},
+
+"decodeSignature": function(s, key) {
+	s = s.split("");
+	var L = s.length;
+	var reverse = function() {s = s.reverse();};
+	var slice = function(a,b) {s = s.slice(a,b+L);};
+	var cycle = function() {
+		var x = [];
+		var tmp;
+		for(var i = arguments.length-1; i >= 0; --i) {
+			x[i] = arguments[i];
+			if(x[i] < 0) x[i] += L;
+			if(tmp === undefined) tmp = s[x[i]];
+			else s[x[i+1]] = s[x[i]];
+		}
+		s[x[0]] = tmp;
+	};
+	
+	switch(key) {
+	case "5qlEPI": cycle(2,66); slice(5,0); break;
+	case "cwIWb1": cycle(0,27); cycle(2,52,45); cycle(5,70); cycle(6,17); slice(6,0); break;
+	case "quSbps": cycle(0,8,32); cycle(-72,-2); slice(2,-2); break;
+	case "Tuq3X1": cycle(0,22); cycle(2,59,46,39); slice(5,-3); break;
+	case "Cqc2WH": cycle(0,69,50,18); slice(0,-1); break;
+	case "I42Qyn":
+	case "uHfcbC": cycle(0,22); cycle(1,27); slice(3,0); break;
+	case "VIZAvA": cycle(0,43,56,44); cycle(3,62,6); slice(3,-2); break;
+	case "lpXa0y": cycle(2,48); cycle(-46,-3); cycle(-28,-1); slice(2,-4); break;
+	case "cky2Yk": cycle(0,6); cycle(-23,-2); slice(0,-1); break;
+	case "JKo6LT": cycle(0,10); cycle(6,65); slice(6,-1); break;
+	case "97HaY5": slice(3,-3); break;
+	case "X3vz3j": cycle(0,27); cycle(-54,-32,-1); slice(2,0); break;
+	case "mTwyLB":
+	case "NKZ-jL":
+	case "dTK8KV": reverse(); cycle(-56,-37,-3); cycle(0,30); slice(0,-2); break;
+	case "B3Uygd":
+	case "T_0rBY":
+	case "01dCpm":
+	case "jjFV5L":
+	case "iSj7bA": reverse(); cycle(-37,-3); cycle(-27,-4); slice(0,-4); break;
+	case "FZFBBO":
+	case "yavNDg":
+	case "lSKff3":
+	case "fLxeEc": reverse(); cycle(0,14,48,41); cycle(1,45); cycle(-35,-1); slice(1,0); break;
+	case "VaILSS": reverse(); cycle(0,49); slice(2,0); break;
+	case "FbM36W": reverse(); cycle(-54,-2,-53); slice(0,-1); break;
+	case "-kGkL5": reverse(); cycle(2,31,36); cycle(-64,-4); slice(2,-3); break;
+	case "c6V7jE": reverse(); cycle(-56,-5); cycle(-9,-2); cycle(-7,-1); slice(2,-4); break;
+	case "meox68": reverse(); cycle(3,15); cycle(-39,-3); slice(3,-2); break;
+	case "StOJYe":
+	case "n3UefM": reverse(); cycle(-66,-1); slice(2,-2); break;
+	case "UukykH": reverse(); cycle(0,4); cycle(-35,-1,-32); break;
+	case "-KqBih": reverse(); cycle(-26,-22,-2,-21); cycle(-23,-1); slice(0,-2); break;
+	case "rHY3xi": reverse(); cycle(0,54,21,34); cycle(-16,-1); slice(2,0); break;
+	case "p80jd_": reverse(); cycle(0,30); cycle(-51,-5); cycle(-18,-2); slice(0,-4); break;
+	case "6fbJ-B": reverse(); cycle(2,36); cycle(3,46); cycle(-65,-2); cycle(-16,-4); slice(3,-3); break;
+	case "XPuwnw": reverse(); cycle(0,60); cycle(3,44); slice(3,0); break;
+	case "7DhXER": reverse(); cycle(0,59); cycle(-57,-51,-3); cycle(-19,-1); slice(0,-5); break;
+	case "bRE_EL": reverse(); cycle(2,69); slice(2,-4); break;
+	case "_769QM": reverse(); cycle(0,60); slice(1,-3); break;
+	}
+	return s.join("");
 },
 
 "initScript": "\

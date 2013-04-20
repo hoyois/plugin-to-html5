@@ -179,7 +179,6 @@ addKiller("YouTube", {
 			} else _this.processVideoID(videoIDList.shift(), true, next);
 		};
 		_this.processVideoID(videoIDList.shift(), true, next);
-		return;
 	};
 	
 	if(/^UL/.test(playlistID)) {
