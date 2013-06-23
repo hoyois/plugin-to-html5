@@ -2,6 +2,8 @@ addKiller("YouTube", {
 
 "playlistFilter": /^UL|^PL|^SP|^AL/,
 
+"decoder": [null,[]],
+
 "canKill": function(data) {
 	if(/^https?:\/\/s\.ytimg\.com\//.test(data.src)) return true;
 	if(/^https?:\/\/(?:www\.)?youtube(?:-nocookie|\.googleapis)?\.com\//.test(data.src)) {data.embed = true; return true;}
@@ -27,9 +29,7 @@ addKiller("YouTube", {
 		if(!videoID) return;
 		if(this.playlistFilter.test(flashvars.list)) playlistID = flashvars.list;
 		if(onsite) {
-			var match = /as3-vfl(.{6})\.swf/.exec(data.src);
-			if(match) flashvars.key = match[1];
-			match = /[#&?]t=(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?/.exec(data.location);
+			var match = /[#&?]t=(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?/.exec(data.location);
 			if(match) {
 				var hours = parseInt(match[1], 10) || 0;
 				var minutes = parseInt(match[2], 10) || 0;
@@ -49,12 +49,15 @@ addKiller("YouTube", {
 		callback(mediaData);
 	};
 	
-	if(playlistID) this.processPlaylist(playlistID, flashvars, mainCallback, callback);
-	else if(onsite) this.processFlashVars(flashvars, mainCallback);
-	else if(videoID) this.processVideoID(videoID, mainCallback);
+	if(playlistID) this.processPlaylist(playlistID, flashvars, !onsite, mainCallback, callback);
+	else if(onsite) {
+		if(!/%2[6C]sig%3D/.test(flashvars.url_encoded_fmt_stream_map) && data.src.indexOf(this.decoder[0]) === -1) this.updateDecoder(flashvars, data.src, mainCallback);
+		else this.processFlashVars(flashvars, mainCallback);
+	}
+	else if(videoID) this.processVideoID(videoID, !onsite, mainCallback);
 },
 
-"processVideoID": function(videoID, callback) {
+"processVideoID": function(videoID, isEmbed, callback) {
 	var _this = this;
 	var xhr = new XMLHttpRequest();
 	xhr.open("GET", "https://www.youtube.com/get_video_info?&video_id=" + videoID + "&eurl=http%3A%2F%2Fwww%2Eyoutube%2Ecom%2F", true);
@@ -62,7 +65,7 @@ addKiller("YouTube", {
 		var flashvars = parseFlashVariables(xhr.responseText);
 		if(flashvars.status === "ok" && flashvars.ps !== "live") {
 			_this.processFlashVars(flashvars, function(mediaData) {
-				mediaData.playlist[0].siteInfo = {"name": "YouTube", "url": "http://www.youtube.com/watch?v=" + videoID};
+				if(isEmbed) mediaData.playlist[0].siteInfo = {"name": "YouTube", "url": "http://www.youtube.com/watch?v=" + videoID};
 				callback(mediaData);
 			});
 		} else { // happens e.g. if YT just removed content and didn't update its playlists yet
@@ -84,7 +87,7 @@ addKiller("YouTube", {
 		if(source) {
 			source.url = decodeURIComponent(x.url) + "&title=" + flashvars.title + encodeURIComponent(" [" + source.format.split(" ")[0] + "]");
 			if(x.sig) source.url += "&signature=" + x.sig;
-			else if(x.s) source.url += "&signature=" + this.decodeSignature(x.s, flashvars.key);
+			else if(x.s) source.url += "&signature=" + this.decodeSignature(x.s);
 			sources.push(source);
 		}
 	}
@@ -103,7 +106,34 @@ addKiller("YouTube", {
 	});
 },
 
-"processPlaylist": function(playlistID, flashvars, mainCallback, callback) {
+"updateDecoder": function(flashvars, src, callback) {
+	var _this= this;
+	var xhr = new XMLHttpRequest();
+	xhr.open("GET", "http://www.youtube.com/watch?v=" + flashvars.video_id, true);
+	xhr.addEventListener("load", function() {
+		var url = /https?:\\\/\\\/s\.ytimg\.com\\\/yts?\\\/jsbin\\\/html5player-vfl.{6}\.js/.exec(xhr.responseText)[0];
+		var xhr2 = new XMLHttpRequest();
+		xhr2.open("GET", url.replace(/\\\//g, "/"), true);
+		xhr2.addEventListener("load", function() {
+			var f = /function [A-Za-z]{2}\(a\)\{a=a\.split\(\"\"\);([^"]*)/.exec(xhr2.responseText)[1];
+			var regex = /\(([^\d\)]*)(\d*)\)/g;
+			_this.decoder[1] = [];
+			var match;
+			while(match = regex.exec(f)) {
+				if(match[1] === "") {
+					if(match[2] === "") _this.decoder[1].push([0]);
+					else _this.decoder[1].push([1, parseInt(match[2])]);
+				} else _this.decoder[1].push([2, parseInt(match[2])]);
+			}
+			_this.decoder[0] = /as3-vfl(.{6})\.swf/.exec(src)[1];
+			_this.processFlashVars(flashvars, callback);
+		}, false);
+		xhr2.send(null);
+	}, false);
+	xhr.send(null);
+},
+
+"processPlaylist": function(playlistID, flashvars, isEmbed, mainCallback, callback) {
 	var videoIDList = [];
 	var _this = this;
 	
@@ -164,8 +194,8 @@ addKiller("YouTube", {
 		};
 		
 		// load the first video at once
-		if(flashvars.url_encoded_fmt_stream_map) _this.processFlashVars(flashvars, callbackForPlaylist);
-		else _this.processVideoID(videoIDList[0], callbackForPlaylist);
+		if(/%26sig%3D/.test(flashvars.url_encoded_fmt_stream_map)) _this.processFlashVars(flashvars, callbackForPlaylist);
+		else _this.processVideoID(videoIDList[0], isEmbed, callbackForPlaylist);
 		videoIDList.shift();
 		unloadList();
 	};
@@ -182,9 +212,9 @@ addKiller("YouTube", {
 			if(i === imax) {
 				callback(mediaData);
 				unloadList();
-			} else _this.processVideoID(videoIDList.shift(), next);
+			} else _this.processVideoID(videoIDList.shift(), true, next);
 		};
-		_this.processVideoID(videoIDList.shift(), next);
+		_this.processVideoID(videoIDList.shift(), true, next);
 	};
 	
 	if(/^UL/.test(playlistID)) {
@@ -215,65 +245,19 @@ addKiller("YouTube", {
 	return false;
 },
 
-"decodeSignature": function(s, key) {
+"decodeSignature": function(s) {
 	s = s.split("");
-	var L = s.length;
-	var reverse = function() {s = s.reverse();};
-	var slice = function(a,b) {s = s.slice(a,b+L);};
-	var cycle = function() {
-		var x = [];
-		var tmp;
-		for(var i = arguments.length-1; i >= 0; --i) {
-			x[i] = arguments[i];
-			if(x[i] < 0) x[i] += L;
-			if(tmp === undefined) tmp = s[x[i]];
-			else s[x[i+1]] = s[x[i]];
-		}
-		s[x[0]] = tmp;
+	var cycle = function(i) {
+	    var t = s[0];
+	    s[0] = s[i%s.length];
+	    s[i] = t;
 	};
-	
-	switch(key) {
-	case "5qlEPI": cycle(2,66); slice(5,0); break;
-	case "cwIWb1": cycle(0,27); cycle(2,52,45); cycle(5,70); cycle(6,17); slice(6,0); break;
-	case "quSbps": cycle(0,8,32); cycle(-72,-2); slice(2,-2); break;
-	case "Tuq3X1": cycle(0,22); cycle(2,59,46,39); slice(5,-3); break;
-	case "Cqc2WH": cycle(0,69,50,18); slice(0,-1); break;
-	case "I42Qyn":
-	case "uHfcbC": cycle(0,22); cycle(1,27); slice(3,0); break;
-	case "VIZAvA": cycle(0,43,56,44); cycle(3,62,6); slice(3,-2); break;
-	case "lpXa0y": cycle(2,48); cycle(-46,-3); cycle(-28,-1); slice(2,-4); break;
-	case "cky2Yk": cycle(0,6); cycle(-23,-2); slice(0,-1); break;
-	case "JKo6LT": cycle(0,10); cycle(6,65); slice(6,-1); break;
-	case "97HaY5": slice(3,-3); break;
-	case "X3vz3j": cycle(0,27); cycle(-54,-32,-1); slice(2,0); break;
-	case "mTwyLB":
-	case "NKZ-jL":
-	case "dTK8KV": reverse(); cycle(-56,-37,-3); cycle(0,30); slice(0,-2); break;
-	case "B3Uygd":
-	case "T_0rBY":
-	case "01dCpm":
-	case "jjFV5L":
-	case "iSj7bA": reverse(); cycle(-37,-3); cycle(-27,-4); slice(0,-4); break;
-	case "FZFBBO":
-	case "yavNDg":
-	case "lSKff3":
-	case "fLxeEc": reverse(); cycle(0,14,48,41); cycle(1,45); cycle(-35,-1); slice(1,0); break;
-	case "VaILSS": reverse(); cycle(0,49); slice(2,0); break;
-	case "FbM36W": reverse(); cycle(-54,-2,-53); slice(0,-1); break;
-	case "-kGkL5": reverse(); cycle(2,31,36); cycle(-64,-4); slice(2,-3); break;
-	case "c6V7jE": reverse(); cycle(-56,-5); cycle(-9,-2); cycle(-7,-1); slice(2,-4); break;
-	case "meox68": reverse(); cycle(3,15); cycle(-39,-3); slice(3,-2); break;
-	case "StOJYe":
-	case "n3UefM": reverse(); cycle(-66,-1); slice(2,-2); break;
-	case "UukykH": reverse(); cycle(0,4); cycle(-35,-1,-32); break;
-	case "-KqBih": reverse(); cycle(-26,-22,-2,-21); cycle(-23,-1); slice(0,-2); break;
-	case "rHY3xi": reverse(); cycle(0,54,21,34); cycle(-16,-1); slice(2,0); break;
-	case "p80jd_": reverse(); cycle(0,30); cycle(-51,-5); cycle(-18,-2); slice(0,-4); break;
-	case "6fbJ-B": reverse(); cycle(2,36); cycle(3,46); cycle(-65,-2); cycle(-16,-4); slice(3,-3); break;
-	case "XPuwnw": reverse(); cycle(0,60); cycle(3,44); slice(3,0); break;
-	case "7DhXER": reverse(); cycle(0,59); cycle(-57,-51,-3); cycle(-19,-1); slice(0,-5); break;
-	case "bRE_EL": reverse(); cycle(2,69); slice(2,-4); break;
-	case "_769QM": reverse(); cycle(0,60); slice(1,-3); break;
+	for(var i = 0; i < this.decoder[1].length; i++) {
+		switch(this.decoder[1][i][0]) {
+		case 0: s = s.reverse(); break;
+		case 1: s = s.slice(this.decoder[1][i][1]); break;
+		case 2: cycle(this.decoder[1][i][1]); break;
+		}
 	}
 	return s.join("");
 },
