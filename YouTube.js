@@ -6,7 +6,7 @@ addKiller("YouTube", {
 
 "canKill": function(data) {
 	if(/^https?:\/\/s\.ytimg\.com\//.test(data.src)) return true;
-	if(/^https?:\/\/(?:www\.)?youtube(?:-nocookie|\.googleapis)?\.com\//.test(data.src)) {data.embed = true; return true;}
+	if(/^https?:\/\/(?:www\.)?youtube(?:-nocookie|\.googleapis)?\.com\/[vpe]\//.test(data.src)) {data.embed = true; return true;}
 	return false;
 },
 
@@ -166,7 +166,7 @@ addKiller("YouTube", {
 				mediaData.playlist[0].siteInfo = {"name": "YouTube", "url": "http://www.youtube.com/watch?v=" + videoID};
 				callback(mediaData);
 			};
-			if(flashvars.use_cipher_signature !== "True") _this.processFlashVars(flashvars, callback);
+			if(flashvars.use_cipher_signature !== "True") _this.processFlashVars(flashvars, callbackForEmbed);
 			else { // ciphered signature
 				var xhr2 = new XMLHttpRequest();
 				xhr2.open("GET", "https://www.youtube.com/watch?&v=" + flashvars.video_id, true);
@@ -174,11 +174,11 @@ addKiller("YouTube", {
 					var match = /\"url_encoded_fmt_stream_map\": ?\"([^"]*)\"/.exec(xhr2.responseText);
 					if(match) {
 						flashvars.url_encoded_fmt_stream_map = encodeURIComponent(unescapeUnicode(match[1]));
-			
+						
 						match = /watch_as3-vfl(.{6})\.swf/.exec(xhr2.responseText);
 						if(match && match[1] !== _this.decoder[0]) _this.decoder = [match[1], null];
-			
-						_this.processFlashVars(flashvars, callback);
+						
+						_this.processFlashVars(flashvars, callbackForEmbed);
 					} else { // e.g. age-restricted video
 						callback({"playlist": [null]});
 					}
