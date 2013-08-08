@@ -4,13 +4,13 @@ addKiller("YouTube", {
 
 "canKill": function(data) {
 	if(/^https?:\/\/s\.ytimg\.com\//.test(data.src)) return true;
-	if(/^https?:\/\/(?:www\.)?youtube(?:-nocookie|\.googleapis)?\.com\//.test(data.src)) {data.embed = true; return true;}
+	if(/^https?:\/\/(?:www\.)?youtube(?:-nocookie|\.googleapis)?\.com\/[vpe]\//.test(data.src)) {data.embed = true; return true;}
 	return false;
 },
 
 "process": function(data, callback) {
 	var videoID, playlistID, startTime;
-	var isEmbed = !/^https?:\/\/www\.youtube\.com\/watch/.test(data.location);
+	var onsite = /^https?:\/\/www\.youtube\.com\/watch/.test(data.location);
 	
 	if(data.embed) { // old-style YT embed
 		var match = /\.com\/([vpe])\/+([^&?]+)/.exec(data.src);
@@ -24,23 +24,23 @@ addKiller("YouTube", {
 		var flashvars = parseFlashVariables(data.params.flashvars);
 		videoID = flashvars.video_id;
 		if(!videoID) return;
+		
 		if(this.playlistFilter.test(flashvars.list)) playlistID = flashvars.list;
-		if(isEmbed) startTime = parseInt(flashvars.start);
-		else {
+		if(onsite) {
 			var match = /[#&?]t=(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?/.exec(data.location);
 			if(match) {
-				var hours = parseInt(match[1], 10) || 0;
-				var minutes = parseInt(match[2], 10) || 0;
-				var seconds = parseInt(match[3], 10) || 0;
+				var hours = parseInt(match[1]) || 0;
+				var minutes = parseInt(match[2]) || 0;
+				var seconds = parseInt(match[3]) || 0;
 				startTime = 3600 * hours + 60 * minutes + seconds;
 			}
-		}
+		} else startTime = parseInt(flashvars.start);
 	}
 	
 	var _this = this;
 	var mainCallback = function(mediaData) {
 		mediaData.startTime = startTime;
-		if(!isEmbed) {
+		if(onsite) {
 			mediaData.initScript = _this.initScript;
 			mediaData.restoreScript = _this.restoreScript;
 		}
@@ -48,21 +48,21 @@ addKiller("YouTube", {
 	};
 	
 	if(playlistID) this.processPlaylist(playlistID, videoID, mainCallback, callback);
-	else if(videoID) this.processVideoID(videoID, isEmbed, mainCallback);
+	else if(videoID) this.processVideoID(videoID, !onsite, mainCallback);
 },
 
 "processVideoID": function(videoID, isEmbed, callback) {
 	var _this = this;
 	var xhr = new XMLHttpRequest();
-	xhr.open("GET", "https://www.youtube.com/get_video_info?&video_id=" + videoID + "&eurl=http%3A%2F%2Fwww%2Eyoutube%2Ecom%2F", true);
+	xhr.open("GET", "https://www.youtube.com/get_video_info?&video_id=" + videoID + "&eurl=http%3A%2F%2Fwww%2Eyoutube%2Ecom%2F&sts=1588", true);
 	xhr.addEventListener("load", function() {
 		var flashvars = parseFlashVariables(xhr.responseText);
-		if(flashvars.status === "ok" && flashvars.ps !== "live") {
+		if(flashvars.status === "ok") {
 			_this.processFlashVars(flashvars, isEmbed ? function(mediaData) {
 				mediaData.playlist[0].siteInfo = {"name": "YouTube", "url": "http://www.youtube.com/watch?v=" + videoID};
 				callback(mediaData);
 			} : callback);
-		} else { // happens e.g. if YT just removed content and didn't update its playlists yet
+		} else { // e.g. region-blocked video
 			callback({"playlist": [null]});
 		}
 	}, false);
@@ -70,39 +70,71 @@ addKiller("YouTube", {
 },
 
 "processFlashVars": function(flashvars, callback) {
-	var formatList = decodeURIComponent(flashvars.url_encoded_fmt_stream_map).split(",");
+	if(flashvars.ps === "live" && !flashvars.hlsvp) return;
 	
 	var sources = [];
-	var x;
-	for(var i = 0; i < formatList.length; i++) {
-		x = parseFlashVariables(formatList[i]);
-		var source = this.processItag(x.itag);
-		if(source) {
-			source.url = decodeURIComponent(x.url) + "&title=" + flashvars.title + encodeURIComponent(" [" + source.format.split(" ")[0] + "]");
-			if(x.sig) source.url += "&signature=" + x.sig;
-			sources.push(source);
+	if(flashvars.url_encoded_fmt_stream_map) {
+		var fmtList = decodeURIComponent(flashvars.url_encoded_fmt_stream_map).split(",");
+		var x, source;
+		for(var i = 0; i < fmtList.length; i++) {
+			x = parseFlashVariables(fmtList[i]);
+			if(!x.url) continue;
+			source = this.expandItag(x.itag);
+			if(source) {
+				source.url = decodeURIComponent(x.url) + "&title=" + flashvars.title + encodeURIComponent(" [" + source.format.split(" ")[0] + "]");
+				if(x.sig) source.url += "&signature=" + x.sig;
+				else if(x.s) source.url += "&signature=" + this.decodeSignature(x.s);
+				sources.push(source);
+			}
 		}
+	} else if(flashvars.hlsvp) {
+		sources.push({"url": decodeURIComponent(flashvars.hlsvp), "format": "M3U8", "isNative": true});
 	}
 	
-	var posterURL;
+	var posterURL, title;
 	if(flashvars.iurlmaxres) posterURL = decodeURIComponent(flashvars.iurlmaxres);
 	else if(flashvars.iurlsd) posterURL = decodeURIComponent(flashvars.iurlsd);
 	else posterURL = "https://i.ytimg.com/vi/" + flashvars.video_id + "/hqdefault.jpg";
+	if(flashvars.title) title = decodeURIComponent(flashvars.title.replace(/\+/g, " "));
 	
 	callback({
 		"playlist": [{
-			"title": decodeURIComponent(flashvars.title.replace(/\+/g, " ")),
+			"title": title,
 			"poster": posterURL,
 			"sources": sources
 		}]
 	});
 },
 
+"expandItag": function(itag) {
+	if(itag === "38") return {"format": "4K MP4", "height": 2304, "isNative": true};
+	if(itag === "37") return {"format": "1080p MP4", "height": 1080, "isNative": true};
+	if(itag === "22") return {"format": "720p MP4", "height": 720, "isNative": true};
+	if(itag === "18") return {"format": "360p MP4", "height": 360, "isNative": true};
+	if(canPlayFLV) {
+		if(itag === "35") return {"format": "480p FLV", "height": 480, "isNative": false};
+		if(itag === "5") return {"format": "240p FLV", "height": 240, "isNative": false};
+	}
+	return false;
+},
+
+"decodeSignature": function(s) {
+	s = s.split("");
+	s = s.slice(2);
+	s = s.reverse();
+	s = s.slice(3);
+   var t = s[0];
+   s[0] = s[19%s.length];
+   s[19] = t;
+	s = s.reverse();
+	return s.join("");
+},
+
 "processPlaylist": function(playlistID, videoID, mainCallback, callback) {
 	var videoIDList = [];
 	var _this = this;
 	
-	var loadAPIList = function(playlistURL, startIndex, reverse) {
+	var loadAPIList = function(playlistURL, startIndex) {
 		var xhr = new XMLHttpRequest();
 		xhr.open("GET", playlistURL + "?start-index=" + startIndex + "&max-results=50", true);
 		xhr.addEventListener("load", function() {
@@ -110,11 +142,11 @@ addKiller("YouTube", {
 				var entries = xhr.responseXML.getElementsByTagName("entry");
 				for(var i = 0; i < entries.length; i++) {
 					try{ // being lazy
-						videoIDList[reverse ? "unshift" : "push"](/\?v=([^&?']+)/.exec(entries[i].getElementsByTagNameNS("http://search.yahoo.com/mrss/", "player")[0].getAttribute("url"))[1]);
+						videoIDList.unshift(/\?v=([^&?']+)/.exec(entries[i].getElementsByTagNameNS("http://search.yahoo.com/mrss/", "player")[0].getAttribute("url"))[1]);
 					} catch(e) {}
 				}
 				if(xhr.responseXML.querySelector("link[rel='next']") === null) processList();
-				else loadAPIList(playlistURL, startIndex + 50, reverse);
+				else loadAPIList(playlistURL, startIndex + 50);
 			} else if(videoID) _this.processVideoID(videoID, false, mainCallback);
 		}, false);
 		xhr.send(null);
@@ -122,7 +154,7 @@ addKiller("YouTube", {
 	
 	var loadPlaylist = function(page) {
 		var xhr = new XMLHttpRequest();
-		xhr.open("GET", "http://www.youtube.com/playlist?list=" + playlistID + "&page=" + page, true);
+		xhr.open("GET", "https://www.youtube.com/playlist?list=" + playlistID + "&page=" + page, true);
 		xhr.addEventListener("load", function() {
 			if(xhr.status === 200) {
 				var regex = /class=\"video-title-container\">\s*<a href=\"\/watch\?v=([^&]*)/g;
@@ -185,7 +217,7 @@ addKiller("YouTube", {
 		var xhr = new XMLHttpRequest();
 		xhr.open("GET", "https://www.youtube.com/watch?&v=" + playlistID.substring(2), true);
 		xhr.addEventListener("load", function() {
-			var match = /http:\/\/www\.youtube\.com\/user\/([^"]*)/.exec(xhr.responseText);
+			var match = /https?:\/\/www\.youtube\.com\/user\/([^"]*)/.exec(xhr.responseText);
 			if(match) loadAPIList("https://gdata.youtube.com/feeds/api/users/" + match[1] + "/uploads", 1, true);
 			else if(videoID) _this.processVideoID(videoID, false, mainCallback);
 		}, false);
@@ -193,35 +225,23 @@ addKiller("YouTube", {
 	} else loadPlaylist(1);
 },
 
-"processItag": function(itag) {
-	if(itag === "38") return {"format": "4K MP4", "height": 2304, "isNative": true};
-	if(itag === "37") return {"format": "1080p MP4", "height": 1080, "isNative": true};
-	if(itag === "22") return {"format": "720p MP4", "height": 720, "isNative": true};
-	if(itag === "18") return {"format": "360p MP4", "height": 360, "isNative": true};
-	if(canPlayFLV) {
-		if(itag === "35") return {"format": "480p FLV", "height": 480, "isNative": false};
-		if(itag === "5") return {"format": "240p FLV", "height": 240, "isNative": false};
-	}
-	return false;
-},
-
 "initScript": "\
 	try{\
-		if(!mediaElement.parentNode) throw null;\
+		var _this = this;\
 		var seekTo = function(time) {\
 			var seek = function() {\
-				mediaElement.removeEventListener(\"loadeddata\", seek, false);\
-				mediaElement.currentTime = time;\
-				mediaElement.play();\
+				_this.removeEventListener(\"loadeddata\", seek, false);\
+				_this.currentTime = time;\
+				_this.play();\
 			};\
-			if(mediaElement.readyState >= mediaElement.HAVE_CURRENT_DATA) {\
-				mediaElement.pause();\
+			if(_this.readyState >= _this.HAVE_CURRENT_DATA) {\
+				_this.pause();\
 				seek();\
 			} else {\
-				mediaElement.preload = \"auto\";\
-				mediaElement.addEventListener(\"loadeddata\", seek, false);\
+				_this.preload = \"auto\";\
+				_this.addEventListener(\"loadeddata\", seek, false);\
 			}\
-			mediaElement.parentNode.focus();\
+			_this.parentNode.focus();\
 		};\
 		window.yt = window.yt || {}; yt.www = yt.www || {}; yt.www.watch = yt.www.watch || {}; yt.www.watch.player = yt.www.watch.player || {};\
 		yt.www.watch.player.flashSeekTo = yt.www.watch.player.seekTo;\
