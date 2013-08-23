@@ -10,7 +10,7 @@ addKiller("YouTube", {
 
 "process": function(data, callback) {
 	var videoID, playlistID, startTime;
-	var onsite = /^https?:\/\/www\.youtube\.com\/watch/.test(data.location);
+	var onsite = /^https?:\/\/www\.youtube\.com\/watch\?/.test(data.location);
 	
 	if(data.embed) { // old-style YT embed
 		var match = /\.com\/([vpe])\/+([^&?]+)/.exec(data.src);
@@ -123,9 +123,9 @@ addKiller("YouTube", {
 	s = s.slice(2);
 	s = s.reverse();
 	s = s.slice(3);
-   var t = s[0];
-   s[0] = s[19%s.length];
-   s[19] = t;
+	var t = s[0];
+	s[0] = s[19%s.length];
+	s[19] = t;
 	s = s.reverse();
 	return s.join("");
 },

@@ -12,7 +12,7 @@ addKiller("YouTube", {
 
 "process": function(data, callback) {
 	var videoID, playlistID, startTime;
-	var onsite = /^https?:\/\/www\.youtube\.com\/watch/.test(data.location);
+	var onsite = /^https?:\/\/www\.youtube\.com\/watch\?/.test(data.location);
 	var flashvars = {};
 	
 	if(data.embed) { // old-style YT embed
