@@ -26,7 +26,7 @@ addKiller("Gametrailers", {
 		return false;
 	}
 	var src = elements[0].textContent;
-	var info = urlInfo(src);
+	var info = extInfo(getExt(src));
 	if(!info) return;
 	info.url = src;
 	var rendition = xml.getElementsByTagName('rendition');

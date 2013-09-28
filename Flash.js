@@ -82,7 +82,7 @@ addKiller("Flash", {
 	if(/^https?:\/\/www\.tvn24\.pl/.test(data.location)) sourceURL = sourceURL.replace(".flv", ".mp4");
 	
 	if(!sourceURL) return;
-	var ext = extractExt(sourceURL);
+	var ext = getExt(sourceURL);
 	var isPlaylist = data.file === "playlistfile" || data.hash === "playlist_url" || ext === "xml" || ext === "xspf";
 	
 	var baseURL = data.src; // used to resolve video URLs
@@ -111,7 +111,7 @@ addKiller("Flash", {
 	
 	if(flashvars["hd.file"]) {
 		var hdURL = decodeURIComponent(flashvars["hd.file"]);
-		var info = urlInfo(hdURL);
+		var info = extInfo(getExt(hdURL));
 		if(info) {
 			info.url = makeAbsoluteURL(hdURL, baseURL);
 			info.format = "HD " + info.format;
@@ -125,7 +125,7 @@ addKiller("Flash", {
 		getMIMEType(sourceURL, function(type) {
 			call(typeInfo(type));
 		});
-	} else call(urlInfo(sourceURL));
+	} else call(extInfo(ext));
 }
 
 });

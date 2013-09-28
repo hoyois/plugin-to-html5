@@ -36,7 +36,7 @@ addKiller("Flowplayer", {
 		if(clip.provider === "rtmp") return;
 		
 		clip.url = decodeURIComponent(clip.url);
-		var source = urlInfo(clip.url);
+		var source = extInfo(getExt(clip.url));
 		if(source) {
 			var base = clip.baseUrl ? clip.baseUrl : baseURL;
 			if(base && !/^https?:/.test(clip.url)) {
@@ -60,7 +60,7 @@ addKiller("Flowplayer", {
 			});
 			if(!source.isAudio) audioOnly = false;
 		} else {
-			var ext = extractExt(clip.url);
+			var ext = getExt(clip.url);
 			if(ext === "jpg" || ext === "png") splash = clip.url;
 			else splash = undefined;
 		}

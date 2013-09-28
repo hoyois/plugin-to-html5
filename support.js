@@ -145,7 +145,7 @@ function extractDomain(url) {
 	return /\/\/([^\/]+)\//.exec(url)[1];
 }
 
-function extractExt(url) {
+function getExt(url) {
 	var i = url.search(/[?#]/);
 	if(i === -1) i = undefined;
 	url = url.substring(url.lastIndexOf("/", i) + 1, i);

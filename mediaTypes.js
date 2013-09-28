@@ -7,7 +7,7 @@ function typeInfo(type) {
 }
 
 function urlInfo(url) {
-	url = extractExt(url);
+	url = getExt(url);
 	if(url === "") return null;
 	for(var type in nativeMediaTypes) {
 		if(nativeMediaTypes[type].exts.indexOf(url) !== -1) return {"isNative": true, "isAudio": /^audio/.test(type), "format": nativeMediaTypes[type].format};
