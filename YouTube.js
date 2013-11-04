@@ -1,3 +1,13 @@
+if(safari) {
+	// SITE-SPECIFIC HACK for ClickToPlugin
+	// Prevents YouTube from removing the Flash player and disables SPF
+	var script = "\
+		var s = document.createElement('script');\
+		s.textContent = 'window.ytplayer=window.ytplayer||{};ytplayer.config=ytplayer.config||{};Object.defineProperty(ytplayer.config,\"min_version\",{\"value\":\"0.0.0\"});window.ytspf=window.ytspf||{};Object.defineProperty(ytspf,\"enabled\",{\"value\":false});';\
+		document.head.appendChild(s);";
+	safari.extension.addContentScript(script, ["http://www.youtube.com/*", "https://www.youtube.com/*"], [], true);
+}
+
 addKiller("YouTube", {
 
 "playlistFilter": /^UL|^PL|^SP|^AL/,
@@ -69,11 +79,14 @@ addKiller("YouTube", {
 	
 	var sources = [];
 	if(flashvars.url_encoded_fmt_stream_map) {
+		var path, x, source;
 		var fmtList = decodeURIComponent(flashvars.url_encoded_fmt_stream_map).split(",");
-		var x, source;
 		for(var i = 0; i < fmtList.length; i++) {
 			x = parseFlashVariables(fmtList[i]);
 			if(!x.url) continue;
+			
+			if(x.itag === "18") path = decodeURIComponent(x.url.substring(0, x.url.indexOf("videoplayback%3F") + 16)).replace(/^https/, "http");
+			
 			source = this.expandItag(x.itag);
 			if(source) {
 				source.url = decodeURIComponent(x.url).replace(/^https/, "http") + "&title=" + flashvars.title + encodeURIComponent(" [" + source.format.split(" ")[0] + "]");
@@ -82,6 +95,29 @@ addKiller("YouTube", {
 				sources.push(source);
 			}
 		}
+		
+		if(flashvars.dashmpd && path) { // Get 1080p and 1440p mp4
+			var dashQuery = "";
+			var dashmpd = decodeURIComponent(flashvars.dashmpd);
+			dashmpd = dashmpd.substring(dashmpd.indexOf("manifest/dash/") + 14).split("/");
+			for(var i = 0; i < dashmpd.length; i += 2) {
+				if(dashmpd[i] === "s") {
+					dashmpd[i] = "signature";
+					dashmpd[i+1] = this.decodeSignature(dashmpd[i+1])
+				}
+				dashQuery += dashmpd[i] + "=" + dashmpd[i+1] + "&";
+			}
+			fmtList = decodeURIComponent(flashvars.adaptive_fmts).split(",");
+			for(var i = fmtList.length - 1; i >= 0; i--) {
+				x = parseFlashVariables(fmtList[i]);
+				source = this.expandItag(x.itag);
+				if(source) {
+					source.url = path + dashQuery + "ratebypass=yes&itag=" + x.itag.substring(1) + "&title=" + flashvars.title + encodeURIComponent(" [" + source.format.split(" ")[0] + "]");
+					sources.unshift(source);
+				}
+			}
+		}
+		
 	} else if(flashvars.hlsvp) {
 		sources.push({"url": decodeURIComponent(flashvars.hlsvp), "format": "M3U8", "isNative": true});
 	}
@@ -102,8 +138,8 @@ addKiller("YouTube", {
 },
 
 "expandItag": function(itag) {
-	if(itag === "38") return {"format": "4K MP4", "height": 2304, "isNative": true};
-	if(itag === "37") return {"format": "1080p MP4", "height": 1080, "isNative": true};
+	if(itag === "138" || itag === "38") return {"format": "1440p MP4", "height": 1440, "isNative": true};
+	if(itag === "137" || itag === "37") return {"format": "1080p MP4", "height": 1080, "isNative": true};
 	if(itag === "22") return {"format": "720p MP4", "height": 720, "isNative": true};
 	if(itag === "18") return {"format": "360p MP4", "height": 360, "isNative": true};
 	if(canPlayFLV) {
