@@ -1,3 +1,13 @@
+if(safari) {
+	// SITE-SPECIFIC HACK for ClickToPlugin
+	// Prevents YouTube from removing the Flash player and disables SPF
+	var script = "\
+		var s = document.createElement('script');\
+		s.textContent = 'window.ytplayer=window.ytplayer||{};ytplayer.config=ytplayer.config||{};Object.defineProperty(ytplayer.config,\"min_version\",{\"value\":\"0.0.0\"});window.ytspf=window.ytspf||{};Object.defineProperty(ytspf,\"enabled\",{\"value\":false});';\
+		document.head.appendChild(s);";
+	safari.extension.addContentScript(script, ["http://www.youtube.com/*", "https://www.youtube.com/*"], [], true);
+}
+
 addKiller("YouTube", {
 
 "playlistFilter": /^UL|^PL|^SP|^AL/,
@@ -73,49 +83,89 @@ addKiller("YouTube", {
 	if(flashvars.ps === "live" && !flashvars.hlsvp) return;
 	
 	var sources = [];
+	var call = function() {
+		var posterURL, title;
+		if(flashvars.iurlmaxres) posterURL = decodeURIComponent(flashvars.iurlmaxres);
+		else if(flashvars.iurlsd) posterURL = decodeURIComponent(flashvars.iurlsd);
+		else posterURL = "https://i.ytimg.com/vi/" + flashvars.video_id + "/hqdefault.jpg";
+		if(flashvars.title) title = decodeURIComponent(flashvars.title.replace(/\+/g, " "));
+		
+		sources.sort(function(a,b){return a.height < b.height ? 1 : -1;});
+		
+		callback({
+			"playlist": [{
+				"title": title,
+				"poster": posterURL,
+				"sources": sources
+			}]
+		});
+	};
+	
+	// Get video URLs
 	if(flashvars.url_encoded_fmt_stream_map) {
+		var path, source;
+		
+		// Get 240p, 360p, and 720p
 		var fmtList = decodeURIComponent(flashvars.url_encoded_fmt_stream_map).split(",");
-		var x, source;
+		var x;
 		for(var i = 0; i < fmtList.length; i++) {
 			x = parseFlashVariables(fmtList[i]);
 			if(!x.url) continue;
-			source = this.expandItag(x.itag);
-			if(source) {
-				source.url = decodeURIComponent(x.url).replace(/^https/, "http") + "&title=" + flashvars.title + encodeURIComponent(" [" + source.format.split(" ")[0] + "]");
-				if(x.sig) source.url += "&signature=" + x.sig;
-				else if(x.s) source.url += "&signature=" + this.decodeSignature(x.s);
-				sources.push(source);
-			}
+			
+			if(x.itag === "22") {
+				source = {"format": "720p MP4", "height": 720, "isNative": true};
+			} else if(x.itag === "18") {
+				path = decodeURIComponent(x.url.substring(0, x.url.indexOf("videoplayback%3F") + 16)).replace(/^https/, "http");
+				source = {"format": "360p MP4", "height": 360, "isNative": true};
+			} else if(canPlayFLV && x.itag === "5") {
+				source = {"format": "240p FLV", "height": 240, "isNative": false};
+			} else continue;
+			
+			source.url = decodeURIComponent(x.url).replace(/^https/, "http") + "&title=" + flashvars.title + "%20%5B" + source.height + "p%5D";
+			if(x.sig) source.url += "&signature=" + x.sig;
+			else if(x.s) source.url += "&signature=" + this.decodeSignature(x.s);
+			sources.push(source);
 		}
+		
+		// Get 480p, 1080p, and 1440p
+		if((canPlayFLV ? /itag%3D135/ : /itag%3D137/).test(flashvars.adaptive_fmts)) {
+			var query = "";
+			var dashmpd = decodeURIComponent(flashvars.dashmpd);
+			dashmpd = dashmpd.substring(dashmpd.indexOf("manifest/dash/") + 14).split("/");
+			for(var i = 0; i < dashmpd.length; i += 2) {
+				if(dashmpd[i] === "s") {
+					dashmpd[i] = "signature";
+					dashmpd[i+1] = this.decodeSignature(dashmpd[i+1]);
+				}
+				query += dashmpd[i] + "=" + dashmpd[i+1] + "&";
+			}
+			
+			// Check that the non-DASH video exists
+			var url480 = path + query + "ratebypass=yes&itag=35&title=" + flashvars.title + "%20%5B480p%5D";
+			getMIMEType(url480, function(type) {
+				if(type !== "text/plain") {
+					if(canPlayFLV) sources.push({"url": url480, "format": "480p FLV", "height": 480, "isNative": false});
+					if(!canPlayFLV || /itag%3D138/.test(flashvars.adaptive_fmts)) sources.push({
+						"url": path + query + "ratebypass=yes&itag=37&title=" + flashvars.title + "%20%5B1080p%5D",
+						"format": "1080p MP4",
+						"height": 1080,
+						"isNative": true
+					});
+					if(/itag%3D138/.test(flashvars.adaptive_fmts)) sources.push({
+						"url": path + query + "ratebypass=yes&itag=38&title=" + flashvars.title + "%20%5B1440p%5D",
+						"format": "1440p MP4",
+						"height": 1440,
+						"isNative": true
+					});
+				}
+				call();
+			});
+		} else call();
+		
 	} else if(flashvars.hlsvp) {
 		sources.push({"url": decodeURIComponent(flashvars.hlsvp), "format": "M3U8", "isNative": true});
+		call();
 	}
-	
-	var posterURL, title;
-	if(flashvars.iurlmaxres) posterURL = decodeURIComponent(flashvars.iurlmaxres);
-	else if(flashvars.iurlsd) posterURL = decodeURIComponent(flashvars.iurlsd);
-	else posterURL = "https://i.ytimg.com/vi/" + flashvars.video_id + "/hqdefault.jpg";
-	if(flashvars.title) title = decodeURIComponent(flashvars.title.replace(/\+/g, " "));
-	
-	callback({
-		"playlist": [{
-			"title": title,
-			"poster": posterURL,
-			"sources": sources
-		}]
-	});
-},
-
-"expandItag": function(itag) {
-	if(itag === "38") return {"format": "4K MP4", "height": 2304, "isNative": true};
-	if(itag === "37") return {"format": "1080p MP4", "height": 1080, "isNative": true};
-	if(itag === "22") return {"format": "720p MP4", "height": 720, "isNative": true};
-	if(itag === "18") return {"format": "360p MP4", "height": 360, "isNative": true};
-	if(canPlayFLV) {
-		if(itag === "35") return {"format": "480p FLV", "height": 480, "isNative": false};
-		if(itag === "5") return {"format": "240p FLV", "height": 240, "isNative": false};
-	}
-	return false;
 },
 
 "decodeSignature": function(s) {
