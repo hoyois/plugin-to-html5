@@ -1,4 +1,4 @@
-if(safari) {
+if(window.safari) {
 	// SITE-SPECIFIC HACK for ClickToPlugin
 	// Prevents YouTube from removing the Flash player and disables SPF
 	var script = "\
@@ -59,7 +59,7 @@ addKiller("YouTube", {
 	
 	if(playlistID) this.processPlaylist(playlistID, videoID, mainCallback, callback);
 	else if(videoID) {
-		if(onsite && !/%2[6C]s%3D/.test(flashvars.url_encoded_fmt_stream_map)) this.processFlashVars(flashvars, mainCallback);
+		if(onsite && /%2[6C]sig%3D/.test(flashvars.url_encoded_fmt_stream_map)) this.processFlashVars(flashvars, mainCallback);
 		else this.processVideoID(videoID, !onsite, mainCallback);
 	}
 },
@@ -87,18 +87,20 @@ addKiller("YouTube", {
 	
 	var sources = [];
 	var call = function() {
-		var posterURL, title;
-		if(flashvars.iurlmaxres) posterURL = decodeURIComponent(flashvars.iurlmaxres);
-		else if(flashvars.iurlsd) posterURL = decodeURIComponent(flashvars.iurlsd);
-		else posterURL = "https://i.ytimg.com/vi/" + flashvars.video_id + "/hqdefault.jpg";
+		var poster, title;
+		if(flashvars.iurlmaxres) poster = decodeURIComponent(flashvars.iurlmaxres);
+		else if(flashvars.iurlsd) poster = decodeURIComponent(flashvars.iurlsd);
+		else poster = "https://i.ytimg.com/vi/" + flashvars.video_id + "/hqdefault.jpg";
 		if(flashvars.title) title = decodeURIComponent(flashvars.title.replace(/\+/g, " "));
 		
-		sources.sort(function(a,b){return a.height < b.height ? 1 : -1;});
+		sources.sort(function(s, t) {
+			return s.height < t.height ? 1 : -1;
+		});
 		
 		callback({
 			"playlist": [{
 				"title": title,
-				"poster": posterURL,
+				"poster": poster,
 				"sources": sources
 			}]
 		});
@@ -106,65 +108,62 @@ addKiller("YouTube", {
 	
 	// Get video URLs
 	if(flashvars.url_encoded_fmt_stream_map) {
-		var path, source;
+		var path;
 		
 		// Get 240p, 360p, and 720p
 		var fmtList = decodeURIComponent(flashvars.url_encoded_fmt_stream_map).split(",");
-		var x;
+		var fmt, source;
 		for(var i = 0; i < fmtList.length; i++) {
-			x = parseFlashVariables(fmtList[i]);
-			if(!x.url) continue;
+			fmt = parseFlashVariables(fmtList[i]);
+			if(!fmt.url) continue;
 			
-			if(x.itag === "22") {
+			if(fmt.itag === "22") {
 				source = {"format": "720p MP4", "height": 720, "isNative": true};
-			} else if(x.itag === "18") {
-				path = decodeURIComponent(x.url.substring(0, x.url.indexOf("videoplayback%3F") + 16)).replace(/^https/, "http");
+			} else if(fmt.itag === "18") {
+				path = decodeURIComponent(fmt.url.substring(0, fmt.url.indexOf("%3F"))).replace(/^https/, "http");
 				source = {"format": "360p MP4", "height": 360, "isNative": true};
-			} else if(canPlayFLV && x.itag === "5") {
+			} else if(canPlayFLV && fmt.itag === "5") {
 				source = {"format": "240p FLV", "height": 240, "isNative": false};
 			} else continue;
 			
-			source.url = decodeURIComponent(x.url).replace(/^https/, "http") + "&title=" + flashvars.title + "%20%5B" + source.height + "p%5D";
-			if(x.sig) source.url += "&signature=" + x.sig;
-			else if(x.s) source.url += "&signature=" + this.decodeSignature(x.s);
+			source.url = decodeURIComponent(fmt.url).replace(/^https/, "http") + "&title=" + flashvars.title + "%20%5B" + source.height + "p%5D";
+			if(fmt.sig) source.url += "&signature=" + fmt.sig;
+			else if(fmt.s) source.url += "&signature=" + this.decodeSignature(fmt.s);
 			sources.push(source);
 		}
 		
 		// Get 480p, 1080p, and 1440p
 		if((canPlayFLV ? /itag%3D135/ : /itag%3D137/).test(flashvars.adaptive_fmts)) {
-			var query = "";
+			var query = "?";
 			var dashmpd = decodeURIComponent(flashvars.dashmpd);
-			dashmpd = dashmpd.substring(dashmpd.indexOf("manifest/dash/") + 14).split("/");
-			for(var i = 0; i < dashmpd.length; i += 2) {
-				if(dashmpd[i] === "s") {
-					dashmpd[i] = "signature";
-					dashmpd[i+1] = this.decodeSignature(dashmpd[i+1]);
-				}
-				query += dashmpd[i] + "=" + dashmpd[i+1] + "&";
+			dashmpd = dashmpd.substring(dashmpd.indexOf("/dash/") + 6).split("/");
+			for(var i = 0; i < dashmpd.length; i++) {
+				if(dashmpd[i] === "s") query += "signature=" + this.decodeSignature(dashmpd[++i]) + "&";
+				else query += dashmpd[i] + "=" + dashmpd[++i] + "&";
 			}
 			
-			// Check that the non-DASH video exists
 			var url480 = path + query + "ratebypass=yes&itag=35&title=" + flashvars.title + "%20%5B480p%5D";
-			getMIMEType(url480, function(type) {
+			getMIMEType(url480, function(type) { // Check if the non-DASH videos exist
 				if(type !== "text/plain") {
 					if(canPlayFLV) sources.push({"url": url480, "format": "480p FLV", "height": 480, "isNative": false});
-					if(!canPlayFLV || /itag%3D138/.test(flashvars.adaptive_fmts)) sources.push({
-						"url": path + query + "ratebypass=yes&itag=37&title=" + flashvars.title + "%20%5B1080p%5D",
-						"format": "1080p MP4",
-						"height": 1080,
-						"isNative": true
-					});
-					if(/itag%3D138/.test(flashvars.adaptive_fmts)) sources.push({
-						"url": path + query + "ratebypass=yes&itag=38&title=" + flashvars.title + "%20%5B1440p%5D",
-						"format": "1440p MP4",
-						"height": 1440,
-						"isNative": true
-					});
+					if(!canPlayFLV || /itag%3D137/.test(flashvars.adaptive_fmts)) {
+						sources.push({
+							"url": path + query + "ratebypass=yes&itag=37&title=" + flashvars.title + "%20%5B1080p%5D",
+							"format": "1080p MP4",
+							"height": 1080,
+							"isNative": true
+						});
+						if(/itag%3D138/.test(flashvars.adaptive_fmts)) sources.push({
+							"url": path + query + "ratebypass=yes&itag=38&title=" + flashvars.title + "%20%5B1440p%5D",
+							"format": "1440p MP4",
+							"height": 1440,
+							"isNative": true
+						});
+					}
 				}
 				call();
 			});
 		} else call();
-		
 	} else if(flashvars.hlsvp) {
 		sources.push({"url": decodeURIComponent(flashvars.hlsvp), "format": "M3U8", "isNative": true});
 		call();
