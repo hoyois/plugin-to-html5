@@ -1,5 +1,3 @@
-// ВКонтакте killer (2012-08-13)
-
 addKiller("ВКонтакте", {
 
 "canKill": function(data) {
@@ -9,7 +7,7 @@ addKiller("ВКонтакте", {
 "process": function(data, callback) {
 	var flashvars = parseFlashVariables(data.params.flashvars);
 	
-	var posterURL = decodeURIComponent(flashvars.thumb);
+	var posterURL = decodeURIComponent(flashvars.jpg || flashvars.thumb);
 	var title = unescapeHTML(decodeURIComponent(flashvars.md_title));
 	var sources = [];
 	
