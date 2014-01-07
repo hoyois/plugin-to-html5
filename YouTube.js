@@ -86,25 +86,6 @@ addKiller("YouTube", {
 	if(flashvars.ps === "live" && !flashvars.hlsvp) return;
 	
 	var sources = [];
-	var call = function() {
-		var poster, title;
-		if(flashvars.iurlmaxres) poster = decodeURIComponent(flashvars.iurlmaxres);
-		else if(flashvars.iurlsd) poster = decodeURIComponent(flashvars.iurlsd);
-		else poster = "https://i.ytimg.com/vi/" + flashvars.video_id + "/hqdefault.jpg";
-		if(flashvars.title) title = decodeURIComponent(flashvars.title.replace(/\+/g, " "));
-		
-		sources.sort(function(s, t) {
-			return s.height < t.height ? 1 : -1;
-		});
-		
-		callback({
-			"playlist": [{
-				"title": title,
-				"poster": poster,
-				"sources": sources
-			}]
-		});
-	};
 	
 	// Get video URLs
 	if(flashvars.url_encoded_fmt_stream_map) {
@@ -131,12 +112,27 @@ addKiller("YouTube", {
 			else if(fmt.s) source.url += "&signature=" + this.decodeSignature(fmt.s);
 			sources.push(source);
 		}
-		
-		call();
 	} else if(flashvars.hlsvp) {
 		sources.push({"url": decodeURIComponent(flashvars.hlsvp), "format": "M3U8", "isNative": true});
-		call();
 	}
+	
+	var poster, title;
+	if(flashvars.iurlmaxres) poster = decodeURIComponent(flashvars.iurlmaxres);
+	else if(flashvars.iurlsd) poster = decodeURIComponent(flashvars.iurlsd);
+	else poster = "https://i.ytimg.com/vi/" + flashvars.video_id + "/hqdefault.jpg";
+	if(flashvars.title) title = decodeURIComponent(flashvars.title.replace(/\+/g, " "));
+	
+	sources.sort(function(s, t) {
+		return s.height < t.height ? 1 : -1;
+	});
+	
+	callback({
+		"playlist": [{
+			"title": title,
+			"poster": poster,
+			"sources": sources
+		}]
+	});
 },
 
 "decodeSignature": function(s) {

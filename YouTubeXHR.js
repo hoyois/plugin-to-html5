@@ -83,25 +83,6 @@ addKiller("YouTube", {
 	if(flashvars.ps === "live" && !flashvars.hlsvp) return;
 	
 	var sources = [];
-	var call = function() {
-		var poster, title;
-		if(flashvars.iurlmaxres) poster = decodeURIComponent(flashvars.iurlmaxres);
-		else if(flashvars.iurlsd) poster = decodeURIComponent(flashvars.iurlsd);
-		else poster = "https://i.ytimg.com/vi/" + flashvars.video_id + "/hqdefault.jpg";
-		if(flashvars.title) title = decodeURIComponent(flashvars.title.replace(/\+/g, " "));
-		
-		sources.sort(function(s, t) {
-			return s.height < t.height ? 1 : -1;
-		});
-		
-		callback({
-			"playlist": [{
-				"title": title,
-				"poster": poster,
-				"sources": sources
-			}]
-		});
-	};
 	
 	// Get video URLs
 	if(flashvars.url_encoded_fmt_stream_map) {
@@ -128,43 +109,27 @@ addKiller("YouTube", {
 			else if(fmt.s) source.url += "&signature=" + this.decodeSignature(fmt.s);
 			sources.push(source);
 		}
-		
-		// Get 480p, 1080p, and 1440p
-		if((canPlayFLV ? /itag%3D135/ : /itag%3D137/).test(flashvars.adaptive_fmts)) {
-			var query = "?";
-			var dashmpd = decodeURIComponent(flashvars.dashmpd);
-			dashmpd = dashmpd.substring(dashmpd.indexOf("/dash/") + 6).split("/");
-			for(var i = 0; i < dashmpd.length; i++) {
-				if(dashmpd[i] === "s") query += "signature=" + this.decodeSignature(dashmpd[++i]) + "&";
-				else query += dashmpd[i] + "=" + dashmpd[++i] + "&";
-			}
-			
-			var url480 = path + query + "ratebypass=yes&itag=35&title=" + flashvars.title + "%20%5B480p%5D";
-			getMIMEType(url480, function(type) { // Check if the non-DASH videos exist
-				if(type !== "text/plain") {
-					if(canPlayFLV) sources.push({"url": url480, "format": "480p FLV", "height": 480, "isNative": false});
-					if(!canPlayFLV || /itag%3D137/.test(flashvars.adaptive_fmts)) {
-						sources.push({
-							"url": path + query + "ratebypass=yes&itag=37&title=" + flashvars.title + "%20%5B1080p%5D",
-							"format": "1080p MP4",
-							"height": 1080,
-							"isNative": true
-						});
-						if(/itag%3D138/.test(flashvars.adaptive_fmts)) sources.push({
-							"url": path + query + "ratebypass=yes&itag=38&title=" + flashvars.title + "%20%5B1440p%5D",
-							"format": "1440p MP4",
-							"height": 1440,
-							"isNative": true
-						});
-					}
-				}
-				call();
-			});
-		} else call();
 	} else if(flashvars.hlsvp) {
 		sources.push({"url": decodeURIComponent(flashvars.hlsvp), "format": "M3U8", "isNative": true});
-		call();
 	}
+	
+	var poster, title;
+	if(flashvars.iurlmaxres) poster = decodeURIComponent(flashvars.iurlmaxres);
+	else if(flashvars.iurlsd) poster = decodeURIComponent(flashvars.iurlsd);
+	else poster = "https://i.ytimg.com/vi/" + flashvars.video_id + "/hqdefault.jpg";
+	if(flashvars.title) title = decodeURIComponent(flashvars.title.replace(/\+/g, " "));
+	
+	sources.sort(function(s, t) {
+		return s.height < t.height ? 1 : -1;
+	});
+	
+	callback({
+		"playlist": [{
+			"title": title,
+			"poster": poster,
+			"sources": sources
+		}]
+	});
 },
 
 "decodeSignature": function(s) {
