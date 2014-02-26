@@ -85,10 +85,7 @@ addKiller("YouTube", {
 	var sources = [];
 	
 	// Get video URLs
-	if(flashvars.url_encoded_fmt_stream_map) {
-		var path;
-		
-		// Get 240p, 360p, and 720p
+	if(flashvars.url_encoded_fmt_stream_map) { // Get 240p, 360p, and 720p
 		var fmtList = decodeURIComponent(flashvars.url_encoded_fmt_stream_map).split(",");
 		var fmt, source;
 		for(var i = 0; i < fmtList.length; i++) {
@@ -98,13 +95,12 @@ addKiller("YouTube", {
 			if(fmt.itag === "22") {
 				source = {"format": "720p MP4", "height": 720, "isNative": true};
 			} else if(fmt.itag === "18") {
-				path = decodeURIComponent(fmt.url.substring(0, fmt.url.indexOf("%3F"))).replace(/^https/, "http");
 				source = {"format": "360p MP4", "height": 360, "isNative": true};
 			} else if(canPlayFLV && fmt.itag === "5") {
 				source = {"format": "240p FLV", "height": 240, "isNative": false};
 			} else continue;
 			
-			source.url = decodeURIComponent(fmt.url).replace(/^https/, "http") + "&title=" + flashvars.title + "%20%5B" + source.height + "p%5D";
+			source.url = decodeURIComponent(fmt.url) + "&title=" + flashvars.title + "%20%5B" + source.height + "p%5D";
 			if(fmt.sig) source.url += "&signature=" + fmt.sig;
 			else if(fmt.s) source.url += "&signature=" + this.decodeSignature(fmt.s);
 			sources.push(source);
@@ -171,7 +167,7 @@ addKiller("YouTube", {
 		xhr.open("GET", "https://www.youtube.com/playlist?list=" + playlistID + "&page=" + page, true);
 		xhr.addEventListener("load", function() {
 			if(xhr.status === 200) {
-				var regex = /class=\"video-title-container\">\s*<a href=\"\/watch\?v=([^&]*)/g;
+				var regex = /class=\"pl-video-content\"><a href=\"\s*\/watch\?v=([^&]*)/g;
 				var match;
 				while(match = regex.exec(xhr.responseText)) {
 					videoIDList.push(match[1]);

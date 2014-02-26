@@ -88,10 +88,7 @@ addKiller("YouTube", {
 	var sources = [];
 	
 	// Get video URLs
-	if(flashvars.url_encoded_fmt_stream_map) {
-		var path;
-		
-		// Get 240p, 360p, and 720p
+	if(flashvars.url_encoded_fmt_stream_map) { // Get 240p, 360p, and 720p
 		var fmtList = decodeURIComponent(flashvars.url_encoded_fmt_stream_map).split(",");
 		var fmt, source;
 		for(var i = 0; i < fmtList.length; i++) {
@@ -101,7 +98,6 @@ addKiller("YouTube", {
 			if(fmt.itag === "22") {
 				source = {"format": "720p MP4", "height": 720, "isNative": true};
 			} else if(fmt.itag === "18") {
-				path = decodeURIComponent(fmt.url.substring(0, fmt.url.indexOf("%3F"))).replace(/^https/, "http");
 				source = {"format": "360p MP4", "height": 360, "isNative": true};
 			} else if(canPlayFLV && fmt.itag === "5") {
 				source = {"format": "240p FLV", "height": 240, "isNative": false};
