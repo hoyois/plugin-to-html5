@@ -162,9 +162,9 @@ addKiller("YouTube", {
 		xhr.send(null);
 	};
 	
-	var loadPlaylist = function(page) {
+	var loadPlaylist = function() {
 		var xhr = new XMLHttpRequest();
-		xhr.open("GET", "https://www.youtube.com/playlist?list=" + playlistID + "&page=" + page, true);
+		xhr.open("GET", "https://www.youtube.com/playlist?list=" + playlistID, true);
 		xhr.addEventListener("load", function() {
 			if(xhr.status === 200) {
 				var regex = /class=\"pl-video-content\"><a href=\"\s*\/watch\?v=([^&]*)/g;
@@ -172,8 +172,7 @@ addKiller("YouTube", {
 				while(match = regex.exec(xhr.responseText)) {
 					videoIDList.push(match[1]);
 				}
-				if(videoIDList.length < 100 * page) processList();
-				else loadPlaylist(page + 1);
+				processList();
 			} else if(videoID) _this.processVideoID(videoID, false, mainCallback);
 		}, false);
 		xhr.send(null);
