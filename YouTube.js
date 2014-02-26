@@ -67,7 +67,7 @@ addKiller("YouTube", {
 "processVideoID": function(videoID, isEmbed, callback) {
 	var _this = this;
 	var xhr = new XMLHttpRequest();
-	xhr.open("GET", "https://www.youtube.com/get_video_info?&video_id=" + videoID + "&eurl=http%3A%2F%2Fwww%2Eyoutube%2Ecom%2F&sts=1588", true);
+	xhr.open("GET", "https://www.youtube.com/get_video_info?&video_id=" + videoID + "&eurl=http%3A%2F%2Fwww%2Eyoutube%2Ecom%2F&sts=15992", true);
 	xhr.addEventListener("load", function() {
 		var flashvars = parseFlashVariables(xhr.responseText);
 		if(flashvars.status === "ok") {
@@ -107,7 +107,7 @@ addKiller("YouTube", {
 				source = {"format": "240p FLV", "height": 240, "isNative": false};
 			} else continue;
 			
-			source.url = decodeURIComponent(fmt.url).replace(/^https/, "http") + "&title=" + flashvars.title + "%20%5B" + source.height + "p%5D";
+			source.url = decodeURIComponent(fmt.url) + "&title=" + flashvars.title + "%20%5B" + source.height + "p%5D";
 			if(fmt.sig) source.url += "&signature=" + fmt.sig;
 			else if(fmt.s) source.url += "&signature=" + this.decodeSignature(fmt.s);
 			sources.push(source);
@@ -137,13 +137,20 @@ addKiller("YouTube", {
 
 "decodeSignature": function(s) {
 	s = s.split("");
-	s = s.slice(2);
+	
+	var swap = function(a) {
+		var t = s[0];
+		s[0] = s[a%s.length];
+		s[a] = t;
+	};
+	
+	swap(2);
 	s = s.reverse();
 	s = s.slice(3);
-	var t = s[0];
-	s[0] = s[19%s.length];
-	s[19] = t;
-	s = s.reverse();
+	swap(52);
+	s = s.slice(2);
+	swap(63);
+	s = s.slice(2);
 	return s.join("");
 },
 
