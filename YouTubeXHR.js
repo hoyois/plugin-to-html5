@@ -167,7 +167,7 @@ addKiller("YouTube", {
 		xhr.open("GET", "https://www.youtube.com/playlist?list=" + playlistID, true);
 		xhr.addEventListener("load", function() {
 			if(xhr.status === 200) {
-				var regex = /class=\"pl-video-content\"><a href=\"\s*\/watch\?v=([^&]*)/g;
+				var regex = /\bdata-video-id="([^"]*)"/g;
 				var match;
 				while(match = regex.exec(xhr.responseText)) {
 					videoIDList.push(match[1]);
