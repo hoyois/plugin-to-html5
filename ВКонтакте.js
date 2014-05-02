@@ -7,28 +7,21 @@ addKiller("ВКонтакте", {
 "process": function(data, callback) {
 	var flashvars = parseFlashVariables(data.params.flashvars);
 	
-	var posterURL = decodeURIComponent(flashvars.jpg || flashvars.thumb);
+	var posterURL = decodeURIComponent(flashvars.jpg);
 	var title = unescapeHTML(decodeURIComponent(flashvars.md_title));
 	var sources = [];
 	
-	var host = decodeURIComponent(flashvars.host);
-	var hd = parseInt(flashvars.hd);
-	
-	if(flashvars.uid && flashvars.uid !== "0") {
-		var url = "http://cs" + host + ".vk.com/u" + decodeURIComponent(flashvars.uid) + "/videos/" + decodeURIComponent(flashvars.vtag) + ".";
-		if(hd >= 3) sources.push({"url": url + "720.mp4", "format": "720p MP4", "height": 720, "isNative": true,});
-		if(hd >= 2) sources.push({"url": url + "480.mp4", "format": "480p MP4", "height": 480, "isNative": true,});
-		if(hd >= 1) sources.push({"url": url + "360.mp4", "format": "360p MP4", "height": 360, "isNative": true});
-		if(flashvars.no_flv === "1") {
-			sources.push({"url": url + "240.mp4", "format": "240p MP4", "height": 240, "isNative": true});
-		} else if(canPlayFLV) {
-			sources.push({"url": url + "flv", "format": "240p FLV", "height": 240, "isNative": false});
+	[1080, 720, 480, 360, 240].forEach(function(res) {
+		var url = flashvars["url" + res];
+		if(!url) return;
+		url = decodeURIComponent(url).split(/\?/)[0];
+		var source = {"url": url, "format": res + "p MP4", "height": res, "isNative": true};
+		if(getExt(url) === "mp4") sources.push(source);
+		else if(canPlayFLV) {
+			source.isNative = false;
+			sources.push(source);
 		}
-	} else if(canPlayFLV) {
-		if(!/^http:/.test(host)) host = "http://" + host;
-		var url = host + "/assets/video/" + decodeURIComponent(flashvars.vtag) + decodeURIComponent(flashvars.vkid) + ".vk.flv";
-		sources.push({"url": url, "format": "240p FLV", "height": 240, "isNative": false});
-	}
+	});
 	
 	callback({
 		"playlist": [{"poster": posterURL, "title": title, "sources": sources}]
