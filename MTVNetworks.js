@@ -3,6 +3,7 @@ addKiller("MTVNetworks", {
 "contexts": {
 	"arc:video:thedailyshow.com:": "4",
 	"arc:episode:thedailyshow.com:": "5",
+	"arc:playlist:thedailyshow.com:": "8",
 	"arc:video:colbertnation.com:": "5",
 	// "arc:episode:colbertnation.com:": "", // no feed
 	"arc:video:gametrailers.com:": "",
