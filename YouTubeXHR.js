@@ -35,7 +35,7 @@ addKiller("YouTube", {
 		videoID = flashvars.video_id;
 		if(!videoID) return;
 		
-		if(this.playlistFilter.test(flashvars.list)) playlistID = flashvars.list;
+		if(flashvars.list !== undefined ||flashvars.list !== null) playlistID = flashvars.list;
 		if(onsite) {
 			var match = /[#&?]t=(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?/.exec(data.location);
 			if(match) {
@@ -57,7 +57,7 @@ addKiller("YouTube", {
 		callback(mediaData);
 	};
 	
-	if(playlistID) this.processPlaylist(playlistID, videoID, mainCallback, callback);
+	if(playlistID) this.processPlaylist(data,playlistID, videoID, mainCallback, callback);
 	else if(videoID) this.processVideoID(videoID, !onsite, mainCallback);
 },
 
@@ -140,7 +140,7 @@ addKiller("YouTube", {
 	return s.join("");
 },
 
-"processPlaylist": function(playlistID, videoID, mainCallback, callback) {
+"processPlaylist": function(data,playlistID, videoID, mainCallback, callback) {
 	var videoIDList = [];
 	var _this = this;
 	
@@ -161,23 +161,6 @@ addKiller("YouTube", {
 		}, false);
 		xhr.send(null);
 	};
-	
-	var loadPlaylist = function() {
-		var xhr = new XMLHttpRequest();
-		xhr.open("GET", "https://www.youtube.com/playlist?list=" + playlistID, true);
-		xhr.addEventListener("load", function() {
-			if(xhr.status === 200) {
-				var regex = /\bdata-video-id="([^"]*)"/g;
-				var match;
-				while(match = regex.exec(xhr.responseText)) {
-					videoIDList.push(match[1]);
-				}
-				processList();
-			} else if(videoID) _this.processVideoID(videoID, false, mainCallback);
-		}, false);
-		xhr.send(null);
-	};
-	
 	var processList = function() {
 		var track = 0;
 		var length = videoIDList.length;
@@ -231,7 +214,18 @@ addKiller("YouTube", {
 			else if(videoID) _this.processVideoID(videoID, false, mainCallback);
 		}, false);
 		xhr.send(null);
-	} else loadPlaylist(1);
+	} else {
+
+                var regex = /\bdata-video-id="([^"]*)"/g;
+				var match;
+				
+				while(match = regex.exec(data.str)) {
+					videoIDList.push(match[1]);
+				}
+				processList();
+
+	}
+	//loadPlaylist(1);
 },
 
 "initScript": "\
