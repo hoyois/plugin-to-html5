@@ -33,7 +33,7 @@ addKiller("YouTube", {
 		videoID = flashvars.video_id;
 		if(!videoID) return;
 		
-		if(flashvars.list) playlistID = flashvars.list;
+		if(flashvars.list && !/^UU/.test(flashvars.list)) playlistID = flashvars.list;
 		if(onsite) {
 			var match = /[#&?]t=(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?/.exec(data.location);
 			if(match) {

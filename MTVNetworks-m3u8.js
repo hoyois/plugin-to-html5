@@ -1,22 +1,27 @@
 addKiller("MTVNetworks", {
 
 "contexts": {
-	"cms:video:thedailyshow.com:": "11",
-	"cms:episode:thedailyshow.com:": "1", // with tdslocal.mud => shadow.comedycentral.com
-	"cms:video:colbertnation.com:": "8",
-	"cms:episode:colbertnation.com:": "7", // not iPad-compatible
-	// "arc:video:gametrailers.com:": "1", // works without context
-	// "cms:item:southparkstudios.com:": "1", // works without context
-	"cms:content:southparkstudios.com:": "3",
-	"cms:video:comedycentral.com:": "6", // no example found
-	"arc:playlist:comedycentral.com:": "4",
-	// "arc:video:comedycentral.com:": "1", // works without context
-	// "cms:video:tosh.comedycentral.com:": "1", // works without context
-	// "cms:promo:tosh.comedycentral.com:": "1", // works without context
-	"hcx:content:comedycentral.co.uk:": "3"//, // no example found
-	// "cms:video:jokes.com:": "1", // works without context
-	// "uma:video:mtv.com:": "1" // works without context
-	// "uma:videolist:mtv.com:" // only works without context
+	"arc:video:thedailyshow.com:": "4",
+	"arc:episode:thedailyshow.com:": "5",
+	"arc:playlist:thedailyshow.com:": "8",
+	"arc:video:colbertnation.com:": "5",
+	// "arc:episode:colbertnation.com:": "", // no feed
+	"arc:video:gametrailers.com:": "",
+	"arc:video:southparkstudios.com:": "",
+	"arc:episode:southparkstudios.com:": "3",
+	"arc:video:comedycentral.com:": "",
+	"arc:playlist:comedycentral.com:": "6",
+	"arc:episode:comedycentral.com:": "",
+	"arc:promo:tosh.comedycentral.com:": "",
+	"arc:video:tosh.comedycentral.com:": "",
+	"arc:episode:tosh.comedycentral.com:": "1"//
+	// "uma:video:mtv.com:": "", // only rtmpe
+	// "uma:videolist:mtv.com:": "" // only rtmpe
+},
+
+"aliases": {
+	"arc:episode:colbertnation.com:": "arc:video:colbertnation.com:",
+	"arc:episode:southpark.de:": "arc:episode:southparkstudios.com:"
 },
 
 "canKill": function(data) {
@@ -26,6 +31,8 @@ addKiller("MTVNetworks", {
 "process": function(data, callback) {
 	var mgid = /mgid:([^.]*[.\w]+:)[-\w]+/.exec(data.src);
 	if(!mgid) return;
+	if(this.aliases[mgid[1]]) mgid[1] = this.aliases[mgid[1]];
+	
 	var context = "";
 	if(this.contexts[mgid[1]]) context = "/context" + this.contexts[mgid[1]];
 	
@@ -35,58 +42,62 @@ addKiller("MTVNetworks", {
 	xhr.addEventListener("load", function() {
 		var xml = xhr.responseXML;
 		var feedURL = xml.getElementsByTagName("feed")[0].textContent.replace(/\n/g, "").replace("{uri}", mgid[0]);
-		if(mgid[1] === "cms:episode:thedailyshow.com:") {
-			feedURL = feedURL.replace("tdslocal.mud", "shadow.comedycentral.com");
-		}
-		if(feedURL) _this.processFeedURL(feedURL, mgid[1], callback);
+		if(feedURL) _this.processFeedURL(feedURL, callback);
 	}, false);
 	xhr.send(null);
 },
 
-"processFeedURL": function(feedURL, mgid, callback) {
+"processFeedURL": function(feedURL, callback) {
 	var xhr = new XMLHttpRequest();
 	xhr.open("GET", feedURL, true);
 	xhr.addEventListener("load", function() {
 		var xml = new DOMParser().parseFromString(xhr.responseText.replace(/^\s+/,""), "text/xml");
+		var channels = xml.getElementsByTagName("channel");
+		if(channels.length !== 0) xml = channels[0];
 		var items = xml.getElementsByTagName("item");
 		
-		var mgidList = [];
+		var list = [];
 		var playlist = [];
 		
-		var content, poster, title, mgidItem;
 		for(var i = 0; i < items.length; i++) {
-			mgid = items[i].getElementsByTagName("guid")[0];
-			if(!mgid) continue;
-			mgidItem = {"mgid": mgid.textContent};
+			var element = items[i].getElementsByTagName("guid")[0];
+			if(!element) continue;
+			var track = {"mgid": element.textContent};
 			
-			poster = items[i].getElementsByTagNameNS("http://search.yahoo.com/mrss/", "thumbnail")[0];
-			if(poster) mgidItem.poster = poster.getAttribute("url");
+			element = items[i].getElementsByTagNameNS("http://search.yahoo.com/mrss/", "thumbnail")[0];
+			if(element) {
+				if(element.hasAttribute("url")) track.poster = element.getAttribute("url");
+				else {
+					element = element.getElementsByTagName("url")[0];
+					if(element) track.poster = element.textContent;
+				}
+			}
 			
-			title = items[i].getElementsByTagName("title")[0];
-			if(title) mgidItem.title = title.textContent;
+			element = items[i].getElementsByTagName("title")[0];
+			if(element) track.title = element.textContent;
 			
-			mgidList.push(mgidItem);
+			list.push(track);
 		}
 		
-		var length = mgidList.length - 1;
+		var length = list.length - 1;
 		
 		var next = function() {
-			if(mgidList.length === 0) callback({"playlist": playlist});
-			else addToPlaylist(mgidList.shift());
+			if(list.length === 0) callback({"playlist": playlist});
+			else addToPlaylist(list.shift());
 		};
 		
-		var addToPlaylist = function(mgidItem) {
+		var addToPlaylist = function(track) {
 			var xhr = new XMLHttpRequest();
-			xhr.open("GET", "http://media.mtvnservices.com/player/html5/mediagen/?uri=" + mgidItem.mgid + "&device=iPad", true);
-			delete mgidItem.mgid;
+			xhr.open("GET", "http://media.mtvnservices.com/player/html5/mediagen/?uri=" + track.mgid + "&device=iPad", true);
+			delete track.mgid;
 			xhr.addEventListener("load", function() {
 				var xml = new DOMParser().parseFromString(xhr.responseText.replace(/^\s+/,""), "text/xml");
 				var videoURL = xml.getElementsByTagName("src")[0];
 				if(videoURL) {
-					mgidItem.sources = [{"url": videoURL.textContent, "isNative": true}];
-					playlist.push(mgidItem);
+					track.sources = [{"url": videoURL.textContent, "isNative": true}];
+					playlist.push(track);
 				} else {
-					if(mgidList.length === length) return;
+					if(list.length === length) return;
 				}
 				next();
 			}, false);
