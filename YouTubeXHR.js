@@ -3,7 +3,9 @@ if(window.safari) {
 	// Prevents YouTube from removing the Flash player and disables SPF
 	var script = "\
 		var s = document.createElement('script');\
-		s.textContent = 'window.ytplayer=window.ytplayer||{};ytplayer.config=ytplayer.config||{};Object.defineProperty(ytplayer.config,\"min_version\",{\"value\":\"0.0.0\"});window.ytspf=window.ytspf||{};Object.defineProperty(ytspf,\"enabled\",{\"value\":false});';\
+		s.textContent = 'window.ytplayer=window.ytplayer||{};ytplayer.config=ytplayer.config||{};Object.defineProperty(ytplayer.config,\"min_version\",{\"value\":\"0.0.0\"});";
+	if(window.MediaSource) script += "Object.defineProperty(ytplayer.config,\"html5\",{\"value\":false});";
+	script += "window.ytspf=window.ytspf||{};Object.defineProperty(ytspf,\"enabled\",{\"value\":false});';\
 		document.head.appendChild(s);";
 	safari.extension.addContentScript(script, ["http://www.youtube.com/*", "https://www.youtube.com/*"], [], true);
 }
@@ -104,7 +106,7 @@ addKiller("YouTube", {
 			sources.push(source);
 		}
 	} else if(flashvars.hlsvp) {
-		sources.push({"url": decodeURIComponent(flashvars.hlsvp), "format": "M3U8", "isNative": true});
+		sources.push({"url": decodeURIComponent(flashvars.hlsvp), "format": "HLS", "isNative": true});
 	}
 	
 	var poster, title;
@@ -142,7 +144,7 @@ addKiller("YouTube", {
 	var videoIDList = [];
 	var _this = this;
 	
-	var loadPlaylist = function(startIndex) {
+	var loadAPIList = function(startIndex) { // hides age-restricted videos
 		var xhr = new XMLHttpRequest();
 		xhr.open("GET", "https://gdata.youtube.com/feeds/api/playlists/" + playlistID + "?start-index=" + startIndex + "&max-results=50", true);
 		xhr.addEventListener("load", function() {
@@ -154,7 +156,25 @@ addKiller("YouTube", {
 					} catch(e) {}
 				}
 				if(xhr.responseXML.querySelector("link[rel='next']") === null) processList();
-				else loadPlaylist(startIndex + 50);
+				else loadAPIList(startIndex + 50);
+			} else if(videoID) _this.processVideoID(videoID, false, mainCallback);
+		}, false);
+		xhr.send(null);
+	};
+	
+	var loadPlaylist = function(url) {
+		var xhr = new XMLHttpRequest();
+		xhr.open("GET", url ? url : "https://www.youtube.com/playlist?list=" + playlistID, true);
+		xhr.addEventListener("load", function() {
+			if(xhr.status === 200) {
+				var regex = /\bdata-video-id=\\?"([^\\"]*)\\?"/g;
+				var match;
+				while(match = regex.exec(xhr.responseText)) {
+					videoIDList.push(match[1]);
+				}
+				match = /\bdata-uix-load-more-href=\\?"([^"]*)\\?"/.exec(xhr.responseText);
+				if(match === null) processList();
+				else loadPlaylist("https://www.youtube.com" + unescapeUnicode(match[1]).replace(/\\/g, "").replace(/&amp;/g, "&"));
 			} else if(videoID) _this.processVideoID(videoID, false, mainCallback);
 		}, false);
 		xhr.send(null);
@@ -204,8 +224,9 @@ addKiller("YouTube", {
 		_this.processVideoID(videoIDList.shift(), true, next);
 	};
 	
-	if(/^UL$/.test(playlistID) && videoID) playlistID = "UL" + videoID;
-	loadPlaylist(1);
+	if(playlistID === "UL" && videoID) playlistID = "UL" + videoID;
+	if(/^PL|^FL|^SP|^AL/.test(playlistID)) loadPlaylist();
+	else loadAPIList(1);
 },
 
 "initScript": "\
