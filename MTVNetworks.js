@@ -21,6 +21,7 @@ addKiller("MTVNetworks", {
 
 "aliases": {
 	"arc:episode:colbertnation.com:": "arc:video:colbertnation.com:",
+	"arc:playlist:colbertnation.com:": "arc:video:colbertnation.com:",
 	"arc:episode:southpark.de:": "arc:episode:southparkstudios.com:"
 },
 
