@@ -4,9 +4,7 @@ if(window.safari) {
 	var script = "\
 		var s = document.createElement('script');\
 		s.textContent = 'window.ytplayer=window.ytplayer||{};ytplayer.config=ytplayer.config||{};Object.defineProperty(ytplayer.config,\"min_version\",{\"value\":\"0.0.0\"});";
-	if(window.MediaSource) script += "var v=document.getElementsByClassName(\"video-stream\")[0];\
-		if(v){v.addEventListener(\"beforeload\",function(e){e.preventDefault();},false);v.src=\"\";};\
-		Object.defineProperty(ytplayer.config,\"html5\",{\"value\":false});";
+	if(window.MediaSource) script += "document.createElement(\"video\").constructor.prototype.canPlayType=function(){return \"\";};";
 	script += "window.ytspf=window.ytspf||{};Object.defineProperty(ytspf,\"enabled\",{\"value\":false});';\
 		document.head.appendChild(s);";
 	safari.extension.addContentScript(script, ["http://www.youtube.com/*", "https://www.youtube.com/*"], [], true);
