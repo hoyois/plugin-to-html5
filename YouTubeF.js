@@ -3,11 +3,13 @@ if(window.safari) {
 	// Prevents YouTube from removing the Flash player and disables SPF
 	var script = "\
 		var s = document.createElement('script');\
-		s.textContent = 'window.ytplayer=window.ytplayer||{};ytplayer.config=ytplayer.config||{};Object.defineProperty(ytplayer.config,\"min_version\",{\"value\":\"0.0.0\"});";
-	if(window.MediaSource) script += "document.createElement(\"video\").constructor.prototype.canPlayType=function(){return \"\";};";
+		s.textContent = 'ytplayer={};Object.defineProperty(ytplayer,\"config\",{\"get\":function(){return ytplayer.$;},\"set\":function(o){o.min_version=\"0.0.0\";o.html5=false;ytplayer.$=o;}});\
+		yt={\"config_\":{}};Object.defineProperty(yt.config_,\"PLAYER_CONFIG\",{\"get\":function(){return yt.config_.$;},\"set\":function(o){o.min_version=\"0.0.0\";o.html5=false;yt.config_.$=o;}});\
+		document.addEventListener(\"DOMContentLoaded\",function(){var v=document.getElementById(\"upsell-video\");if(v)v.dataset.swfConfig=v.dataset.swfConfig.replace(\"8.0.0\",\"0.0.0\");},true);";
+		if(window.MediaSource) script += "document.createElement(\"video\").constructor.prototype.canPlayType=function(){return \"\";};";
 	script += "window.ytspf=window.ytspf||{};Object.defineProperty(ytspf,\"enabled\",{\"value\":false});';\
-		document.head.appendChild(s);";
-	safari.extension.addContentScript(script, ["http://www.youtube.com/*", "https://www.youtube.com/*"], [], true);
+		document.documentElement.appendChild(s);";
+	safari.extension.addContentScript(script, ["http://www.youtube.com/*", "https://www.youtube.com/*"], [], false);
 }
 
 addKiller("YouTube", {
