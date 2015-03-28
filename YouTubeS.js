@@ -18,7 +18,11 @@ if(window.safari) {
 
 addKiller("YouTube", {
 
-"decoder": [null, []],
+"decoder": {
+	"swf": "",
+	"timeStamp": "",
+	"key": []
+},
 
 "canKill": function(data) {
 	if(/^https?:\/\/s\.ytimg\.com\//.test(data.src)) return true;
@@ -29,7 +33,7 @@ addKiller("YouTube", {
 "process": function(data, callback) {
 	var videoID, playlistID, startTime;
 	var onsite = /^https?:\/\/www\.youtube\.com\/watch\?/.test(data.location);
-
+	
 	if(data.embed) { // old-style YT embed
 		var match = /\.com\/([vpe])\/+([^&?]+)/.exec(data.src);
 		if(match) {
@@ -42,13 +46,17 @@ addKiller("YouTube", {
 		var flashvars = parseFlashVariables(data.params.flashvars);
 		videoID = flashvars.video_id;
 		if(!videoID) return;
-	
+		
+		// Check if decoder must be updated
+		var match = /-vfl(.{6})/.exec(data.src);
+		if(match && match[1] !== this.decoder.swf) {
+			this.decoder.swf = match[1];
+			this.updateDecoder(videoID, data, callback);
+			return;
+		}
+		
 		if(flashvars.list && !/^UU/.test(flashvars.list)) playlistID = flashvars.list;
 		if(onsite) {
-			
-			var match = /-vfl(.{6})\/watch_as3\.swf/.exec(data.src);
-			if(match && match[1] !== this.decoder[0]) this.decoder = [match[1], null];
-			
 			var match = /[#&?]t=(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?/.exec(data.location);
 			if(match) {
 				var hours = parseInt(match[1]) || 0;
@@ -58,7 +66,7 @@ addKiller("YouTube", {
 			}
 		} else startTime = parseInt(flashvars.start);
 	}
-
+	
 	var _this = this;
 	var mainCallback = function(mediaData) {
 		mediaData.startTime = startTime;
@@ -68,7 +76,7 @@ addKiller("YouTube", {
 		}
 		callback(mediaData);
 	};
-
+	
 	if(playlistID) this.processPlaylist(playlistID, videoID, !onsite, mainCallback, callback);
 	else if(videoID) {
 		if(onsite) this.processFlashVars(flashvars, mainCallback);
@@ -76,36 +84,17 @@ addKiller("YouTube", {
 	}
 },
 
-"processVideoID": function(videoID, callback) {
+"processVideoID": function(videoID, isEmbed, callback) {
 	var _this = this;
 	var xhr = new XMLHttpRequest();
-	xhr.open("GET", "https://www.youtube.com/get_video_info?&video_id=" + videoID + "&eurl=http%3A%2F%2Fwww%2Eyoutube%2Ecom%2F", true);
+	xhr.open("GET", "https://www.youtube.com/get_video_info?&video_id=" + videoID + "&eurl=http%3A%2F%2Fwww%2Eyoutube%2Ecom%2F&sts=" + this.decoder.timeStamp, true);
 	xhr.addEventListener("load", function() {
 		var flashvars = parseFlashVariables(xhr.responseText);
 		if(flashvars.status === "ok") {
-			var callbackForEmbed = function(mediaData) {
-				mediaData.playlist[0].siteInfo = {"name": "YouTube", "url": "https://www.youtube.com/watch?v=" + videoID};
+			_this.processFlashVars(flashvars, isEmbed ? function(mediaData) {
+				mediaData.playlist[0].siteInfo = {"name": "YouTube", "url": "http://www.youtube.com/watch?v=" + videoID};
 				callback(mediaData);
-			};
-			if(flashvars.use_cipher_signature !== "True") _this.processFlashVars(flashvars, callbackForEmbed);
-			else { // ciphered signature
-				var xhr2 = new XMLHttpRequest();
-				xhr2.open("GET", "https://www.youtube.com/watch?&v=" + flashvars.video_id, true);
-				xhr2.addEventListener("load", function() {
-					var match = /\"url_encoded_fmt_stream_map\": ?\"([^"]*)\"/.exec(xhr2.responseText);
-					if(match) {
-						flashvars.url_encoded_fmt_stream_map = encodeURIComponent(unescapeUnicode(match[1]));
-						
-						match = /\/player-vfl(.{6})\/watch_as3\.swf/.exec(xhr2.responseText);
-						if(match && match[1] !== _this.decoder[0]) _this.decoder = [match[1], null];
-						
-						_this.processFlashVars(flashvars, callbackForEmbed);
-					} else { // e.g. age-restricted video
-						callback({"playlist": [null]});
-					}
-				}, false);
-				xhr2.send(null);
-			}
+			} : callback);
 		} else { // e.g. region-blocked video
 			callback({"playlist": [null]});
 		}
@@ -115,11 +104,6 @@ addKiller("YouTube", {
 
 "processFlashVars": function(flashvars, callback) {
 	if(flashvars.ps === "live" && !flashvars.hlsvp) return;
-	
-	if(this.decoder[1] === null && /%2[6C]s%3D/.test(flashvars.url_encoded_fmt_stream_map)) {
-		this.updateDecoder(flashvars, callback);
-		return;
-	}
 	
 	var sources = [];
 	var title = flashvars.title.replace(/%22/g, "%5C%22");
@@ -173,12 +157,12 @@ addKiller("YouTube", {
 "decodeSignature": function(s) {
 	s = s.split("");
 	var swap = function(n) {
-	    var t = s[0];
-	    s[0] = s[n%s.length];
-	    s[n] = t;
+		var t = s[0];
+		s[0] = s[n%s.length];
+		s[n] = t;
 	};
-	for(var i = 0; i < this.decoder[1].length; i++) {
-		var n = this.decoder[1][i];
+	for(var i = 0; i < this.decoder.key.length; i++) {
+		var n = this.decoder.key[i];
 		if(n === 0) s = s.reverse();
 		else if(n < 0) s = s.slice(-n);
 		else swap(n);
@@ -186,30 +170,39 @@ addKiller("YouTube", {
 	return s.join("");
 },
 
-"updateDecoder": function(flashvars, callback) {
+"updateDecoder": function(videoID, data, callback) {
 	var _this = this;
 	var xhr = new XMLHttpRequest();
-	xhr.open("GET", "https://www.youtube.com/watch?v=" + flashvars.video_id, true);
+	xhr.open("GET", "https://www.youtube.com/embed/" + videoID, true);
 	xhr.addEventListener("load", function() {
-		var match = /\/\/s\.ytimg\.com\/yts\/jsbin\/html5player-[a-zA-Z_]+-vfl.{6}\/html5player\.js/.exec(xhr.responseText);
-		if(!match) return;
+		var match = /\"sts\": ?(\d*)/.exec(xhr.responseText);
+		var timeStamp = match[1];
+		match = /\/\/s\.ytimg\.com\/yts\/jsbin\/html5player-[a-zA-Z_]+-vfl.{6}\/html5player\.js/.exec(xhr.responseText);
 		var xhr2 = new XMLHttpRequest();
-		xhr2.open("GET", "http:" + match[0], true);
+		xhr2.open("GET", "https:" + match[0], true);
 		xhr2.addEventListener("load", function() {
-			match = /function [$_A-Za-z]+\(a\)\{a=a(?:\.split|\[[$_A-Za-z]+\])\(\"\"\);([^"]*)/.exec(xhr2.responseText);
-			if(!match) return;
-			_this.decoder[1] = [];
-			var a, regex = /\(([^\d\)]*)(\d*)\)|\[(\d+)\]/g;
-			// TO BE UPDATED
-			while(a = regex.exec(match[1])) {
-				var n = a[3] || a[2];
-				if(n === "0") continue;
-				if(a[1] === "") {
-					if(n === "") _this.decoder[1].push(0);
-					else _this.decoder[1].push(-parseInt(n));
-				} else _this.decoder[1].push(parseInt(n));
+			// Crude JS parsing
+			var match = /function [$_A-Za-z0-9]+\(a\)\{a=a(?:\.split|\[[$_A-Za-z0-9]+\])\(\"\"\);([^"]*)/.exec(xhr2.responseText);
+			var index = xhr2.responseText.indexOf(";var " + /^[$_A-Za-z]+/.exec(match[1])[0] + "=\{");
+			var x = xhr2.responseText.substring(index);
+			var a, tmp, n, r, s, regex = /([$_A-Za-z0-9]+):|reverse|splice/g;
+			while((a = regex.exec(x)) && (!r || !s)) {
+				if(a[0] === "reverse") r = tmp;
+				else if(a[0] === "splice") s = tmp;
+				else tmp = a[1];
 			}
-			_this.processFlashVars(flashvars, callback);
+			var key = [];
+			regex = /[$_A-Za-z0-9]+\.([$_A-Za-z0-9]+)\(a,(\d*)\)/g;
+			while(a = regex.exec(match[1])) {
+				n = a[2];
+				if(a[1] === r) key.push(0);
+				else if(a[1] === s) key.push(-parseInt(n));
+				else key.push(parseInt(n));
+			}
+			
+			_this.decoder.timeStamp = timeStamp;
+			_this.decoder.key = key;
+			_this.process(data, callback);
 		}, false);
 		xhr2.send(null);
 	}, false);
