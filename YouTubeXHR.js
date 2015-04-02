@@ -70,7 +70,7 @@ addKiller("YouTube", {
 "processVideoID": function(videoID, isEmbed, callback) {
 	var _this = this;
 	var xhr = new XMLHttpRequest();
-	xhr.open("GET", "https://www.youtube.com/get_video_info?&video_id=" + videoID + "&eurl=http%3A%2F%2Fwww%2Eyoutube%2Ecom%2F&sts=16497", true);
+	xhr.open("GET", "https://www.youtube.com/get_video_info?&video_id=" + videoID + "&eurl=http%3A%2F%2Fwww%2Eyoutube%2Ecom%2F&sts=135957536242", true);
 	xhr.addEventListener("load", function() {
 		var flashvars = parseFlashVariables(xhr.responseText);
 		if(flashvars.status === "ok") {
@@ -139,14 +139,15 @@ addKiller("YouTube", {
 
 "decodeSignature": function(s) {
 	s = s.split("");
-	var t = s[0];
-	s[0] = s[66%s.length];
-	s[66] = t;
-	s = s.reverse();
 	s = s.slice(3);
-	t = s[0];
-	s[0] = s[60%s.length];
-	s[60] = t;
+	s = s.reverse();
+	s = s.slice(2);
+	s = s.reverse();
+	s = s.slice(1);
+	s = s.reverse();
+	var t = s[0];
+	s[0] = s[67%s.length];
+	s[67] = t;
 	return s.join("");
 },
 
