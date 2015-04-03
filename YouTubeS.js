@@ -189,11 +189,11 @@ addKiller("YouTube", {
 	var xhr = new XMLHttpRequest();
 	xhr.open("GET", "https://www.youtube.com/embed/" + videoID, true);
 	xhr.addEventListener("load", function() {
-		var match = /\"sts\": ?(\d*)/.exec(xhr.responseText);
+		var match = /\"sts\":(\d*)/.exec(xhr.responseText);
 		var timeStamp = match[1];
-		match = /\/\/s\.ytimg\.com\/yts\/jsbin\/html5player-[a-zA-Z_]+-vfl.{6}\/html5player\.js/.exec(xhr.responseText);
+		match = /\"js\":\"([^"])\"/.exec(xhr.responseText);
 		var xhr2 = new XMLHttpRequest();
-		xhr2.open("GET", "https:" + match[0], true);
+		xhr2.open("GET", "https:" + match[1].replace(/\\/g, ""), true);
 		xhr2.addEventListener("load", function() {
 			// Crude JS parsing
 			var match = /function [$_A-Za-z0-9]+\(a\)\{a=a(?:\.split|\[[$_A-Za-z0-9]+\])\(\"\"\);([^"]*)/.exec(xhr2.responseText);
