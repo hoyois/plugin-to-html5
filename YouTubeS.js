@@ -191,7 +191,7 @@ addKiller("YouTube", {
 	xhr.addEventListener("load", function() {
 		var match = /\"sts\":(\d*)/.exec(xhr.responseText);
 		var timeStamp = match[1];
-		match = /\"js\":\"([^"])\"/.exec(xhr.responseText);
+		match = /\"js\":\"([^"]*)\"/.exec(xhr.responseText);
 		var xhr2 = new XMLHttpRequest();
 		xhr2.open("GET", "https:" + match[1].replace(/\\/g, ""), true);
 		xhr2.addEventListener("load", function() {
