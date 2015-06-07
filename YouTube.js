@@ -55,7 +55,7 @@ addKiller("YouTube", {
 			return;
 		}
 		
-		if(flashvars.list && !/^UU/.test(flashvars.list)) playlistID = flashvars.list;
+		if(flashvars.list && /^PL|^FL|^SP|^AL/.test(playlistID)) playlistID = flashvars.list;
 		if(onsite) {
 			var match = /[#&?]t=(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s?)?/.exec(data.location);
 			if(match) {
@@ -228,25 +228,6 @@ addKiller("YouTube", {
 	var videoIDList = [];
 	var _this = this;
 	
-	var loadAPIList = function(startIndex) { // hides age-restricted videos
-		var xhr = new XMLHttpRequest();
-		xhr.open("GET", "https://gdata.youtube.com/feeds/api/playlists/" + playlistID + "?start-index=" + startIndex + "&max-results=50", true);
-		xhr.addEventListener("load", function() {
-			if(xhr.status === 200) {
-				var entries = xhr.responseXML.getElementsByTagName("entry");
-				for(var i = 0; i < entries.length; i++) {
-					try{ // being lazy
-						videoIDList.push(/\?v=([^&?']+)/.exec(entries[i].getElementsByTagNameNS("http://search.yahoo.com/mrss/", "player")[0].getAttribute("url"))[1]);
-					} catch(e) {}
-				}
-				if(xhr.responseXML.querySelector("link[rel='next']") === null) processList();
-				else loadAPIList(startIndex + 50);
-			} else if(flashvars) _this.processFlashVars(flashvars, mainCallback);
-			else if(videoID) _this.processVideoID(videoID, mainCallback);
-		}, false);
-		xhr.send(null);
-	};
-	
 	var loadPlaylist = function(url) {
 		var xhr = new XMLHttpRequest();
 		xhr.open("GET", url ? url : "https://www.youtube.com/playlist?list=" + playlistID, true);
@@ -311,9 +292,7 @@ addKiller("YouTube", {
 		_this.processVideoID(videoIDList.shift(), next);
 	};
 	
-	if(playlistID === "UL" && videoID) playlistID = "UL" + videoID;
-	if(/^PL|^FL|^SP|^AL/.test(playlistID)) loadPlaylist();
-	else loadAPIList(1);
+	loadPlaylist();
 },
 
 "initScript": "\
