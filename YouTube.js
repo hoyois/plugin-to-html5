@@ -1,6 +1,6 @@
 if(window.safari) {
 	// YOUTUBE HACKS for ClickToPlugin
-	var script = "var s = document.createElement('script'); s.textContent = '";
+	var script = "var s = document.createElement('script'); s.textContent = 'if(!/[?&]html5=1/.test(location.search)){";
 	// Disable SPF
 	script += "ytspf={};Object.defineProperty(ytspf,\"enabled\",{\"value\":false});";
 	// Disable HTML5 on Safari 8+
@@ -12,8 +12,8 @@ if(window.safari) {
 	script += "yt={\"config_\":{}};Object.defineProperty(yt.config_,\"PLAYER_CONFIG\",{\"get\":function(){return yt.config_.$;},\"set\":function($){$.min_version=\"0.0.0\";yt.config_.$=$;}});";
 	// ... on /user pages
 	script += "document.addEventListener(\"DOMContentLoaded\",function(){var v=document.getElementById(\"upsell-video\");if(v)v.dataset.swfConfig=v.dataset.swfConfig.replace(/(min_version[^\\\\d]*)\\\\d+\\\\.\\\\d+\\\\.\\\\d+/,\"$10.0.0\");},true);";
-	script += "'; document.documentElement.appendChild(s);";
-	safari.extension.addContentScript(script, ["http://www.youtube.com/*", "https://www.youtube.com/*"], ["http://www.youtube.com/embed/", "https://www.youtube.com/embed/"], false);
+	script += "}'; document.documentElement.appendChild(s);";
+	safari.extension.addContentScript(script, ["http://www.youtube.com/*", "https://www.youtube.com/*"], [], false);
 }
 
 addKiller("YouTube", {
