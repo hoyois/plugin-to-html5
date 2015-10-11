@@ -1,12 +1,10 @@
-alert("YouTube killer loaded!")
-
 if(window.safari) {
 	// YOUTUBE HACKS for ClickToPlugin
 	var script = "var s = document.createElement('script'); s.textContent = 'if(!/[?&]html5=1/.test(location.search)){";
 	// Disable SPF
 	script += "ytspf={};Object.defineProperty(ytspf,\"enabled\",{\"value\":false});";
 	// Disable HTML5 on Safari 8+
-	script += "alert(HTMLMediaElement.prototype.canPlayType);delete HTMLMediaElement.prototype.canPlayType;alert(HTMLMediaElement.prototype.canPlayType);";
+	script += "delete HTMLMediaElement.prototype.canPlayType;";
 	// Disable Flash version checking...
 	// ... on /watch pages
 	script += "ytplayer={};Object.defineProperty(ytplayer,\"config\",{\"get\":function(){return ytplayer.$;},\"set\":function($){$.min_version=\"0.0.0\";ytplayer.$=$;}});";
