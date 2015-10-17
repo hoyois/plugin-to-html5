@@ -4,7 +4,7 @@ if(window.safari) {
 	// Disable SPF
 	script += "ytspf={};Object.defineProperty(ytspf,\"enabled\",{\"value\":false});";
 	// Disable HTML5
-	script += "HTMLMediaElement.prototype.canPlayType=function(){return\"\";};";
+	script += "HTMLMediaElement.prototype.canPlayType=function(){return\"\";};HTMLMediaElement.prototype.play=function(){};";
 	// Disable Flash version checking...
 	// ... on /watch pages
 	script += "ytplayer={};Object.defineProperty(ytplayer,\"config\",{\"get\":function(){return ytplayer.$;},\"set\":function($){$.min_version=\"0.0.0\";ytplayer.$=$;}});";
