@@ -5,7 +5,7 @@ addKiller("Spiegel", {
 },
 
 "process": function(data, callback) {
-	var videoID = parseFlashVariables(data.params.flashvars).videoid;
+	var videoID = data.baseURL.replace(/http.*-(\d+)-iframe.html/g, "$1");
 	callback({
 		"playlist": [{
 			"sources": [{
