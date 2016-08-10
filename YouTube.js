@@ -7,11 +7,11 @@ if(window.safari) {
 	script += "HTMLMediaElement.prototype.canPlayType=function(){return\"\";};HTMLMediaElement.prototype.nativePlay=HTMLMediaElement.prototype.play;HTMLMediaElement.prototype.play=function(){if(this.className===\"CTPmediaElement\")this.nativePlay();else{this.removeAttribute(\"src\");this.load();}};";
 	// Disable Flash version checking...
 	// ... on /watch pages
-	script += "ytplayer={};Object.defineProperty(ytplayer,\"config\",{\"get\":function(){return ytplayer.$;},\"set\":function($){$.min_version=\"0.0.0\";ytplayer.$=$;}});";
+	script += "ytplayer={};Object.defineProperty(ytplayer,\"config\",{\"get\":function(){return ytplayer.$;},\"set\":function($){$.min_version=\"0.0.0\";$.url_v9as2=$.url;ytplayer.$=$;}});";
 	// ... on /embed pages
-	script += "yt={\"config_\":{}};Object.defineProperty(yt.config_,\"PLAYER_CONFIG\",{\"get\":function(){return yt.config_.$;},\"set\":function($){$.min_version=\"0.0.0\";yt.config_.$=$;}});";
+	script += "yt={\"config_\":{}};Object.defineProperty(yt.config_,\"PLAYER_CONFIG\",{\"get\":function(){return yt.config_.$;},\"set\":function($){$.min_version=\"0.0.0\";$.url_v9as2=$.url;yt.config_.$=$;}});";
 	// ... on /user pages
-	script += "document.addEventListener(\"DOMContentLoaded\",function(){var v=document.getElementById(\"upsell-video\");if(v)v.dataset.swfConfig=v.dataset.swfConfig.replace(/(min_version[^\\\\d]*)\\\\d+\\\\.\\\\d+\\\\.\\\\d+/,\"$10.0.0\");},true);";
+	script += "document.addEventListener(\"DOMContentLoaded\",function(){var v=document.getElementById(\"upsell-video\");if(v)v.dataset.swfConfig=v.dataset.swfConfig.replace(/(min_version[^\\\\d]*)\\\\d+\\\\.\\\\d+\\\\.\\\\d+/,\"$10.0.0\").replace(/(url_v9as2\\\":\\\")\\\"/,\"$1\"+ytplayer.config.url.replace(/\\\\//g,\"\\\\\\\\/\")+\"\\\\\"\");},true);";
 	script += "}'; document.documentElement.appendChild(s);";
 	safari.extension.addContentScript(script, ["http://www.youtube.com/*", "https://www.youtube.com/*"], [], false);
 }
