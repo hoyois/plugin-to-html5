@@ -192,7 +192,7 @@ addKiller("YouTube", {
 		var timeStamp = match[1];
 		match = /\"js\":\"([^"]*)\"/.exec(xhr.responseText);
 		var xhr2 = new XMLHttpRequest();
-		xhr2.open("GET", "https:" + match[1].replace(/\\/g, ""), true);
+		xhr2.open("GET", "https://www.youtube.com" + match[1].replace(/\\/g, ""), true);
 		xhr2.addEventListener("load", function() {
 			// Crude JS parsing
 			var match = /function[ $_A-Za-z0-9]*\(a\)\{a=a(?:\.split|\[[$_A-Za-z0-9]+\])\(\"\"\);\s*([^"]*)/.exec(xhr2.responseText);
